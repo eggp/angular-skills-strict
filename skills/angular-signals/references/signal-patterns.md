@@ -269,7 +269,7 @@ export class SearchComponent {
   // Loading state
   private searching = signal(false);
   readonly isSearching = this.searching.asReadonly();
-  
+
   constructor() {
     // Track loading state
     effect(() => {
@@ -277,12 +277,12 @@ export class SearchComponent {
       if (q.length >= 2) {
         this.searching.set(true);
       }
-    }, { allowSignalWrites: true });
-    
+    });
+
     effect(() => {
       this.results(); // Subscribe to results
       this.searching.set(false);
-    }, { allowSignalWrites: true });
+    });
   }
 }
 ```

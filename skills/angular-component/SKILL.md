@@ -170,26 +170,21 @@ export class CardComponent {}
 ## Lifecycle Hooks
 
 ```typescript
-import { 
-  AfterContentInit, AfterViewInit, OnDestroy, OnInit,
-  afterNextRender, afterRender
-} from '@angular/core';
+import { OnDestroy, OnInit, afterNextRender, afterRender } from '@angular/core';
 
-export class MyComponent implements OnInit, AfterContentInit, AfterViewInit, OnDestroy {
+export class MyComponent implements OnInit, OnDestroy {
   constructor() {
     // For DOM manipulation after render (SSR-safe)
     afterNextRender(() => {
       // Runs once after first render
     });
-    
+
     afterRender(() => {
       // Runs after every render
     });
   }
-  
+
   ngOnInit() { /* Component initialized */ }
-  ngAfterContentInit() { /* Projected content ready */ }
-  ngAfterViewInit() { /* View children ready */ }
   ngOnDestroy() { /* Cleanup */ }
 }
 ```

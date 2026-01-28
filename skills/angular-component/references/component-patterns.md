@@ -56,7 +56,7 @@ value = model.required<number>();
 Query elements and components in the template:
 
 ```typescript
-import { Component, viewChild, viewChildren, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, viewChild, viewChildren, ElementRef } from '@angular/core';
 
 @Component({
   selector: 'app-gallery',
@@ -68,22 +68,17 @@ import { Component, viewChild, viewChildren, ElementRef, AfterViewInit } from '@
     </div>
   `,
 })
-export class GalleryComponent implements AfterViewInit {
+export class GalleryComponent {
   images = input.required<Image[]>();
-  
+
   // Query single element
   container = viewChild.required<ElementRef<HTMLDivElement>>('container');
-  
+
   // Query single component (optional)
   firstCard = viewChild(ImageCardComponent);
-  
+
   // Query all matching components
   allCards = viewChildren(ImageCardComponent);
-  
-  ngAfterViewInit() {
-    console.log('Container:', this.container().nativeElement);
-    console.log('Cards:', this.allCards().length);
-  }
 }
 ```
 
@@ -92,14 +87,14 @@ export class GalleryComponent implements AfterViewInit {
 Query projected content:
 
 ```typescript
-import { Component, contentChild, contentChildren, AfterContentInit } from '@angular/core';
+import { Component, contentChild, contentChildren, effect, signal } from '@angular/core';
 
 @Component({
   selector: 'app-tabs',
   template: `
     <div class="tab-headers">
       @for (tab of tabs(); track tab.label()) {
-        <button 
+        <button
           [class.active]="tab === activeTab()"
           (click)="selectTab(tab)"
         >
@@ -112,23 +107,25 @@ import { Component, contentChild, contentChildren, AfterContentInit } from '@ang
     </div>
   `,
 })
-export class TabsComponent implements AfterContentInit {
+export class TabsComponent {
   // Query all projected TabComponent children
   tabs = contentChildren(TabComponent);
-  
+
   // Query single projected element
   header = contentChild('tabHeader');
-  
+
   activeTab = signal<TabComponent | undefined>(undefined);
-  
-  ngAfterContentInit() {
-    // Set first tab as active
-    const firstTab = this.tabs()[0];
-    if (firstTab) {
-      this.activeTab.set(firstTab);
-    }
+
+  constructor() {
+    // Set first tab as active when tabs are available
+    effect(() => {
+      const firstTab = this.tabs()[0];
+      if (firstTab && !this.activeTab()) {
+        this.activeTab.set(firstTab);
+      }
+    });
   }
-  
+
   selectTab(tab: TabComponent) {
     this.activeTab.set(tab);
   }

@@ -122,18 +122,8 @@ export class SearchComponent {
 ```
 
 **Effect rules:**
-- Cannot write to signals by default (use `allowSignalWrites` if needed)
 - Run in injection context (constructor or with `runInInjectionContext`)
 - Automatically cleaned up when component destroys
-
-```typescript
-// Writing signals in effects (use sparingly)
-effect(() => {
-  if (this.query().length > 0) {
-    this.hasSearched.set(true);
-  }
-}, { allowSignalWrites: true });
-```
 
 ## Component State Pattern
 
