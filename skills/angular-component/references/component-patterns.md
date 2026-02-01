@@ -32,11 +32,11 @@ import { Component, model } from '@angular/core';
 })
 export class Slider {
   // Model creates both input and output
-  value = model(0);
-  min = input(0);
-  max = input(100);
+  readonly value = model(0);
+  readonly min = input(0);
+  readonly max = input(100);
   
-  onInput(event: Event) {
+  protected onInput(event: Event) {
     const target = event.target as HTMLInputElement;
     this.value.set(Number(target.value));
   }
@@ -48,7 +48,7 @@ export class Slider {
 Required model:
 
 ```typescript
-value = model.required<number>();
+readonly value = model.required<number>();
 ```
 
 ## View Queries
@@ -69,16 +69,16 @@ import { Component, viewChild, viewChildren, ElementRef } from '@angular/core';
   `,
 })
 export class Gallery {
-  images = input.required<Image[]>();
+  readonly images = input.required<Image[]>();
 
   // Query single element
-  container = viewChild.required<ElementRef<HTMLDivElement>>('container');
+  readonly container = viewChild.required<ElementRef<HTMLDivElement>>('container');
 
   // Query single component (optional)
-  firstCard = viewChild(ImageCard);
+  readonly firstCard = viewChild(ImageCard);
 
   // Query all matching components
-  allCards = viewChildren(ImageCard);
+  readonly allCards = viewChildren(ImageCard);
 }
 ```
 
@@ -109,12 +109,12 @@ import { Component, contentChild, contentChildren, effect, signal } from '@angul
 })
 export class Tabs {
   // Query all projected Tab children
-  tabs = contentChildren(Tab);
+  readonly tabs = contentChildren(Tab);
 
   // Query single projected element
-  header = contentChild('tabHeader');
+  readonly header = contentChild('tabHeader');
 
-  activeTab = signal<Tab | undefined>(undefined);
+  protected readonly activeTab = signal<Tab | undefined>(undefined);
 
   constructor() {
     // Set first tab as active when tabs are available
@@ -126,7 +126,7 @@ export class Tabs {
     });
   }
 
-  selectTab(tab: Tab) {
+  protected selectTab(tab: Tab) {
     this.activeTab.set(tab);
   }
 }
@@ -140,8 +140,8 @@ export class Tabs {
   },
 })
 export class Tab {
-  label = input.required<string>();
-  isActive = input(false);
+  readonly label = input.required<string>();
+  readonly isActive = input(false);
 }
 ```
 
@@ -158,18 +158,18 @@ import { Router } from '@angular/router';
   template: `...`,
 })
 export class Dashboard {
-  private router = inject(Router);
-  private userService = inject(User);
-  private config = inject(APP_CONFIG);
+  readonly #router = inject(Router);
+  readonly #userService = inject(User);
+  readonly #config = inject(APP_CONFIG);
   
   // Optional injection
-  private analytics = inject(Analytics, { optional: true });
+  readonly #analytics = inject(Analytics, { optional: true });
   
   // Self-only injection
-  private localService = inject(Local, { self: true });
+  readonly #localService = inject(Local, { self: true });
   
-  navigateToProfile() {
-    this.router.navigate(['/profile']);
+  protected navigateToProfile() {
+    this.#router.navigate(['/profile']);
   }
 }
 ```
@@ -184,15 +184,15 @@ export class Dashboard {
   template: `<app-child [data]="parentData()" [config]="config" />`,
 })
 export class Parent {
-  parentData = signal({ name: 'Test' });
-  config = { theme: 'dark' };
+  protected readonly parentData = signal({ name: 'Test' });
+  protected readonly config = { theme: 'dark' };
 }
 
 // Child
 @Component({ selector: 'app-child' })
 export class Child {
-  data = input.required<Data>();
-  config = input<Config>();
+  readonly data = input.required<Data>();
+  readonly config = input<Config>();
 }
 ```
 
@@ -205,9 +205,9 @@ export class Child {
   template: `<button (click)="save()">Save</button>`,
 })
 export class Child {
-  saved = output<Data>();
+  readonly saved = output<Data>();
   
-  save() {
+  protected save() {
     this.saved.emit({ id: 1, name: 'Item' });
   }
 }
@@ -217,7 +217,7 @@ export class Child {
   template: `<app-child (saved)="onSaved($event)" />`,
 })
 export class Parent {
-  onSaved(data: Data) {
+  protected onSaved(data: Data) {
     console.log('Saved:', data);
   }
 }
@@ -229,37 +229,37 @@ export class Parent {
 // Shared state service
 @Injectable({ providedIn: 'root' })
 export class Cart {
-  private items = signal<CartItem[]>([]);
+  readonly #items = signal<CartItem[]>([]);
   
-  readonly items$ = this.items.asReadonly();
+  readonly items$ = this.#items.asReadonly();
   readonly total = computed(() => 
-    this.items().reduce((sum, item) => sum + item.price, 0)
+    this.#items().reduce((sum, item) => sum + item.price, 0)
   );
   
   addItem(item: CartItem) {
-    this.items.update(items => [...items, item]);
+    this.#items.update(items => [...items, item]);
   }
   
   removeItem(id: string) {
-    this.items.update(items => items.filter(i => i.id !== id));
+    this.#items.update(items => items.filter(i => i.id !== id));
   }
 }
 
 // Component A
 @Component({ template: `<button (click)="add()">Add</button>` })
 export class Product {
-  private cart = inject(Cart);
-  product = input.required<Product>();
+  readonly #cart = inject(Cart);
+  readonly product = input.required<Product>();
   
-  add() {
-    this.cart.addItem({ ...this.product(), quantity: 1 });
+  protected add() {
+    this.#cart.addItem({ ...this.product(), quantity: 1 });
   }
 }
 
 // Component B
 @Component({ template: `<span>Total: {{ cart.total() }}</span>` })
 export class CartSummary {
-  cart = inject(Cart);
+  protected readonly cart = inject(Cart);
 }
 ```
 
@@ -282,7 +282,7 @@ Using `@defer` for lazy loading:
   `,
 })
 export class Dashboard {
-  chartData = input.required<ChartData>();
+  readonly chartData = input.required<ChartData>();
 }
 ```
 
@@ -306,7 +306,7 @@ Defer triggers:
   `,
 })
 export class Post {
-  postId = input.required<string>();
+  readonly postId = input.required<string>();
 }
 ```
 
@@ -320,7 +320,7 @@ export class Post {
   },
 })
 export class Highlight {
-  color = input('yellow', { alias: 'appHighlight' });
+  readonly color = input('yellow', { alias: 'appHighlight' });
 }
 
 // Usage on component
@@ -348,10 +348,10 @@ export class Page {}
   `,
 })
 export class ErrorBoundary {
-  hasError = signal(false);
-  private errorHandler = inject(ErrorHandler);
+  protected readonly hasError = signal(false);
+  readonly #errorHandler = inject(ErrorHandler);
   
-  retry() {
+  protected retry() {
     this.hasError.set(false);
   }
 }

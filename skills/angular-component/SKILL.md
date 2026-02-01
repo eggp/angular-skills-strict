@@ -34,22 +34,22 @@ import { Component, ChangeDetectionStrategy, input, output, computed } from '@an
 })
 export class UserCard {
   // Required input
-  name = input.required<string>();
+  readonly name = input.required<string>();
   
   // Optional input with default
-  email = input<string>('');
-  showEmail = input(false);
+  readonly email = input<string>('');
+  readonly showEmail = input(false);
   
   // Input with transform
-  isActive = input(false, { transform: booleanAttribute });
+  readonly isActive = input(false, { transform: booleanAttribute });
   
   // Computed from inputs
-  avatarUrl = computed(() => `https://api.example.com/avatar/${this.name()}`);
+  readonly avatarUrl = computed(() => `https://api.example.com/avatar/${this.name()}`);
   
   // Output
-  selected = output<string>();
+  readonly selected = output<string>();
   
-  handleClick() {
+  protected handleClick() {
     this.selected.emit(this.name());
   }
 }
@@ -59,20 +59,20 @@ export class UserCard {
 
 ```typescript
 // Required - must be provided by parent
-name = input.required<string>();
+readonly name = input.required<string>();
 
 // Optional with default value
-count = input(0);
+readonly count = input(0);
 
 // Optional without default (undefined allowed)
-label = input<string>();
+readonly label = input<string>();
 
 // With alias for template binding
-size = input('medium', { alias: 'buttonSize' });
+readonly size = input('medium', { alias: 'buttonSize' });
 
 // With transform function
-disabled = input(false, { transform: booleanAttribute });
-value = input(0, { transform: numberAttribute });
+readonly disabled = input(false, { transform: booleanAttribute });
+readonly value = input(0, { transform: numberAttribute });
 ```
 
 ## Signal Outputs
@@ -81,15 +81,15 @@ value = input(0, { transform: numberAttribute });
 import { output, outputFromObservable } from '@angular/core';
 
 // Basic output
-clicked = output<void>();
-selected = output<Item>();
+readonly clicked = output<void>();
+readonly selected = output<Item>();
 
 // With alias
-valueChange = output<number>({ alias: 'change' });
+readonly valueChange = output<number>({ alias: 'change' });
 
 // From Observable (for RxJS interop)
-scroll$ = new Subject<number>();
-scrolled = outputFromObservable(this.scroll$);
+readonly #scroll$ = new Subject<number>();
+readonly scrolled = outputFromObservable(this.#scroll$);
 
 // Emit values
 this.clicked.emit();
@@ -126,13 +126,13 @@ Use the `host` object in `@Component`—do NOT use `@HostBinding` or `@HostListe
   template: `<ng-content />`,
 })
 export class Button {
-  variant = input<'primary' | 'secondary'>('primary');
-  disabled = input(false, { transform: booleanAttribute });
-  color = input('#007bff');
+  readonly variant = input<'primary' | 'secondary'>('primary');
+  readonly disabled = input(false, { transform: booleanAttribute });
+  readonly color = input('#007bff');
   
-  clicked = output<void>();
+  readonly clicked = output<void>();
   
-  onClick(event: Event) {
+  protected onClick(event: Event) {
     if (!this.disabled()) {
       this.clicked.emit();
     }
@@ -213,11 +213,11 @@ Components MUST:
   template: `<span class="toggle-track"><span class="toggle-thumb"></span></span>`,
 })
 export class Toggle {
-  label = input.required<string>();
-  checked = input(false, { transform: booleanAttribute });
-  checkedChange = output<boolean>();
+  readonly label = input.required<string>();
+  readonly checked = input(false, { transform: booleanAttribute });
+  readonly checkedChange = output<boolean>();
   
-  toggle() {
+  protected toggle() {
     this.checkedChange.emit(!this.checked());
   }
 }
@@ -252,6 +252,24 @@ Use native control flow—do NOT use `*ngIf`, `*ngFor`, `*ngSwitch`.
 }
 ```
 
+## Local Variables (@let)
+
+Use `@let` to declare local variables in templates. This is particularly useful for optimizing signal execution by capturing a value once and reusing it, instead of calling the signal multiple times.
+
+```html
+<!-- Bad: Calls expensiveSignal() twice -->
+@if (expensiveSignal() > 100) {
+  <span>Value {{ expensiveSignal() }} is too high!</span>
+}
+
+<!-- Good: Calls expensiveSignal() once -->
+@let value = expensiveSignal();
+
+@if (value > 100) {
+  <span>Value {{ value }} is too high!</span>
+}
+```
+
 ## Class and Style Bindings
 
 Do NOT use `ngClass` or `ngStyle`. Use direct bindings:
@@ -281,7 +299,7 @@ import { NgOptimizedImage } from '@angular/common';
   `,
 })
 export class Hero {
-  imageUrl = input.required<string>();
+  readonly imageUrl = input.required<string>();
 }
 ```
 
