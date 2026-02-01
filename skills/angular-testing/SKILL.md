@@ -283,24 +283,24 @@ describe('TodoList', () => {
   });
   
   it('should filter active todos', () => {
-    (component as any).todos.set([
+    (component).todos.set([
       { id: '1', text: 'Task 1', done: false },
       { id: '2', text: 'Task 2', done: true },
       { id: '3', text: 'Task 3', done: false },
     ]);
     
-    (component as any).filter.set('active');
+    (component).filter.set('active');
     
-    expect((component as any).filteredTodos().length).toBe(2);
-    expect((component as any).remaining()).toBe(2);
+    expect((component).filteredTodos().length).toBe(2);
+    expect((component).remaining()).toBe(2);
   });
   
   it('should render filtered todos', () => {
-    (component as any).todos.set([
+    (component).todos.set([
       { id: '1', text: 'Active Task', done: false },
       { id: '2', text: 'Done Task', done: true },
     ]);
-    (component as any).filter.set('active');
+    (component).filter.set('active');
     fixture.detectChanges();
     
     const items = fixture.nativeElement.querySelectorAll('li');
@@ -320,7 +320,7 @@ OnPush components require explicit change detection:
   template: `<span>{{ data().name }}</span>`,
 })
 export class OnPush {
-  protected readonly data = input.required<{ name: string }>();
+  readonly data = input.required<{ name: string }>();
 }
 
 describe('OnPush', () => {
@@ -352,7 +352,7 @@ import { TestBed } from '@angular/core/testing';
 @Injectable({ providedIn: 'root' })
 export class CounterSvc {
   readonly #count = signal(0);
-  readonly count = this.#count.asReadonly();
+  get count(): Signal<number> { return this.#count.asReadonly(); }
   
   increment() {
     this.#count.update(c => c + 1);
@@ -507,7 +507,7 @@ it('should show content when authenticated', () => {
   `,
 })
 export class Item {
-  protected readonly item = input.required<Item>();
+  readonly item = input.required<Item>();
   readonly selected = output<Item>();
   
   protected select() {

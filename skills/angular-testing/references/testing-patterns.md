@@ -210,7 +210,7 @@ describe('Order', () => {
     ]);
     fixture.detectChanges();
     
-    expect((fixture.componentInstance as any).total()).toBe(30);
+    expect((fixture.componentInstance).total()).toBe(30);
   });
 });
 ```
@@ -328,7 +328,7 @@ describe('Router Navigation', () => {
   it('should navigate to user page', async () => {
     const component = await harness.navigateByUrl('/users/123', UserCmpt);
     
-    expect((component as any).id()).toBe('123');
+    expect((component).id()).toBe('123');
   });
   
   it('should display user name', async () => {
@@ -433,24 +433,24 @@ describe('Login', () => {
   });
   
   it('should be invalid when empty', () => {
-    expect((component as any).loginForm().invalid()).toBeTrue();
+    expect((component).loginForm().invalid()).toBeTrue();
   });
   
   it('should be valid with correct data', () => {
-    (component as any).model.set({
+    (component).model.set({
       email: 'test@example.com',
       password: 'password123',
     });
     
-    expect((component as any).loginForm().valid()).toBeTrue();
+    expect((component).loginForm().valid()).toBeTrue();
   });
   
   it('should show email error for invalid email', () => {
-    (component as any).loginForm.email().value.set('invalid');
+    (component).loginForm.email().value.set('invalid');
     fixture.detectChanges();
     
-    expect((component as any).loginForm.email().invalid()).toBeTrue();
-    expect((component as any).loginForm.email().errors().some(e => e.kind === 'email')).toBeTrue();
+    expect((component).loginForm.email().invalid()).toBeTrue();
+    expect((component).loginForm.email().errors().some(e => e.kind === 'email')).toBeTrue();
   });
   
   it('should disable submit button when invalid', () => {
@@ -563,7 +563,7 @@ describe('If', () => {
     
     expect(fixture.nativeElement.querySelector('p')).toBeNull();
     
-    (fixture.componentInstance as any).show.set(true);
+    (fixture.componentInstance).show.set(true);
     fixture.detectChanges();
     
     expect(fixture.nativeElement.querySelector('p')).toBeTruthy();
