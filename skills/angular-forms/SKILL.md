@@ -47,19 +47,19 @@ interface LoginData {
 })
 export class Login {
   // Form model - a writable signal
-  loginModel = signal<LoginData>({
+  protected readonly loginModel = signal<LoginData>({
     email: '',
     password: '',
   });
   
   // Create form with validation schema
-  loginForm = form(this.loginModel, (schemaPath) => {
+  protected readonly loginForm = form(this.loginModel, (schemaPath) => {
     required(schemaPath.email, { message: 'Email is required' });
     email(schemaPath.email, { message: 'Enter a valid email address' });
     required(schemaPath.password, { message: 'Password is required' });
   });
   
-  onSubmit(event: Event) {
+  protected onSubmit(event: Event) {
     event.preventDefault();
     if (this.loginForm().valid()) {
       const credentials = this.loginModel();
@@ -86,7 +86,7 @@ interface UserProfile {
 }
 
 // Create model signal with initial values
-const userModel = signal<UserProfile>({
+protected readonly userModel = signal<UserProfile>({
   name: '',
   email: '',
   age: null,
@@ -97,11 +97,11 @@ const userModel = signal<UserProfile>({
 });
 
 // Create form from model
-const userForm = form(userModel);
+protected readonly userForm = form(this.userModel);
 
 // Access nested fields via dot notation
-userForm.name                    // FieldTree<string>
-userForm.preferences.theme       // FieldTree<'light' | 'dark'>
+this.userForm.name                    // FieldTree<string>
+this.userForm.preferences.theme       // FieldTree<'light' | 'dark'>
 ```
 
 ### Reading Values
@@ -323,13 +323,13 @@ import { submit } from '@angular/forms/signals';
   `,
 })
 export class Login {
-  model = signal({ email: '', password: '' });
-  form = form(this.model, (schemaPath) => {
+  protected readonly model = signal({ email: '', password: '' });
+  protected readonly form = form(this.model, (schemaPath) => {
     required(schemaPath.email);
     required(schemaPath.password);
   });
   
-  onSubmit(event: Event) {
+  protected onSubmit(event: Event) {
     event.preventDefault();
     
     // submit() marks all fields touched and runs callback if valid
@@ -360,25 +360,25 @@ interface Order {
   `,
 })
 export class Order {
-  orderModel = signal<Order>({
+  protected readonly orderModel = signal<Order>({
     items: [{ product: '', quantity: 1 }],
   });
   
-  orderForm = form(this.orderModel, (schemaPath) => {
+  protected readonly orderForm = form(this.orderModel, (schemaPath) => {
     applyEach(schemaPath.items, (item) => {
       required(item.product, { message: 'Product required' });
       min(item.quantity, 1, { message: 'Min quantity is 1' });
     });
   });
   
-  addItem() {
+  protected addItem() {
     this.orderModel.update(m => ({
       ...m,
       items: [...m.items, { product: '', quantity: 1 }],
     }));
   }
   
-  removeItem(index: number) {
+  protected removeItem(index: number) {
     this.orderModel.update(m => ({
       ...m,
       items: m.items.filter((_, i) => i !== index),
@@ -418,7 +418,7 @@ export class Order {
 ## Reset Form
 
 ```typescript
-async onSubmit() {
+protected async onSubmit() {
   if (!this.form().valid()) return;
   
   await this.api.submit(this.model());
@@ -428,6 +428,33 @@ async onSubmit() {
   
   // Clear values
   this.model.set({ email: '', password: '' });
+}
+```
+
+## Template Variables with @let
+
+Use `@let` to declare local variables in templates. This is especially useful for caching signal values to avoid multiple executions or making templates more readable.
+
+```html
+<!-- Cache signal value to avoid multiple executions -->
+@let user = userSignal();
+
+<div class="profile">
+  <h1>{{ user.name }}</h1>
+  <p>{{ user.email }}</p>
+
+  @if (user.isAdmin) {
+    <button>Admin Settings</button>
+  }
+</div>
+
+<!-- Simplify complex expressions -->
+@let emailField = form.email();
+@let hasError = emailField.touched() && emailField.invalid();
+
+<input [formField]="emailField" [class.error]="hasError" />
+@if (hasError) {
+  <p>{{ emailField.errors()[0].message }}</p>
 }
 ```
 
