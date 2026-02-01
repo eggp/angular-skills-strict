@@ -127,8 +127,8 @@ export const appConfig: ApplicationConfig = {
 @Component({...})
 export class Search {
   // Query params as inputs
-  protected readonly q = input<string>('');
-  protected readonly page = input<string>('1');
+  readonly q = input<string>('');
+  readonly page = input<string>('1');
   
   protected readonly currentPage = computed(() => parseInt(this.page(), 10));
 }
@@ -171,12 +171,11 @@ import { CanActivateFn, Router } from '@angular/router';
 
 export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(Auth);
-  const router = inject(Router);
-  
   if (authService.isAuthenticated()) {
     return true;
   }
-  
+
+  const router = inject(Router);
   // Redirect to login with return URL
   return router.createUrlTree(['/login'], {
     queryParams: { returnUrl: state.url },
@@ -197,14 +196,13 @@ export const authGuard: CanActivateFn = (route, state) => {
 export const roleGuard = (allowedRoles: string[]): CanActivateFn => {
   return (route, state) => {
     const authService = inject(Auth);
-    const router = inject(Router);
-    
     const userRole = authService.currentUser()?.role;
     
     if (userRole && allowedRoles.includes(userRole)) {
       return true;
     }
-    
+
+    const router = inject(Router);
     return router.createUrlTree(['/unauthorized']);
   };
 };
@@ -362,8 +360,8 @@ export class Product {
 // Access in component
 @Component({...})
 export class AdminCmpt {
-  protected readonly title = input<string>(); // From route data
-  protected readonly roles = input<string[]>(); // From route data
+  readonly title = input<string>(); // From route data
+  readonly roles = input<string[]>(); // From route data
 }
 
 // Or via ActivatedRoute
