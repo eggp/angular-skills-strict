@@ -99,10 +99,10 @@ import { Component, input, computed } from '@angular/core';
 })
 export class UserDetail {
   // Route param as signal input
-  id = input.required<string>();
+  protected readonly id = input.required<string>();
   
   // Computed based on route param
-  userId = computed(() => parseInt(this.id(), 10));
+  protected readonly userId = computed(() => parseInt(this.id(), 10));
 }
 ```
 
@@ -127,10 +127,10 @@ export const appConfig: ApplicationConfig = {
 @Component({...})
 export class Search {
   // Query params as inputs
-  q = input<string>('');
-  page = input<string>('1');
+  protected readonly q = input<string>('');
+  protected readonly page = input<string>('1');
   
-  currentPage = computed(() => parseInt(this.page(), 10));
+  protected readonly currentPage = computed(() => parseInt(this.page(), 10));
 }
 ```
 
@@ -144,17 +144,17 @@ import { map } from 'rxjs';
 
 @Component({...})
 export class UserDetail {
-  private route = inject(ActivatedRoute);
+  readonly #route = inject(ActivatedRoute);
   
   // Convert route params to signal
-  id = toSignal(
-    this.route.paramMap.pipe(map(params => params.get('id'))),
+  protected readonly id = toSignal(
+    this.#route.paramMap.pipe(map(params => params.get('id'))),
     { initialValue: null }
   );
   
   // Query params
-  query = toSignal(
-    this.route.queryParamMap.pipe(map(params => params.get('q'))),
+  protected readonly query = toSignal(
+    this.#route.queryParamMap.pipe(map(params => params.get('q'))),
     { initialValue: '' }
   );
 }
@@ -235,7 +235,7 @@ export const unsavedChangesGuard: CanDeactivateFn<CanDeactivate> = (component) =
 // Component implementation
 @Component({...})
 export class Edit implements CanDeactivate {
-  form = inject(FormBuilder).group({...});
+  protected readonly form = inject(FormBuilder).group({...});
   
   canDeactivate(): boolean {
     return !this.form.dirty;
@@ -275,7 +275,7 @@ export const userResolver: ResolveFn<User> = (route) => {
 // Component - access resolved data via input
 @Component({...})
 export class UserDetail {
-  user = input.required<User>();
+  protected readonly user = input.required<User>();
 }
 ```
 
@@ -310,37 +310,38 @@ export class ProductsLayout {}
 
 ```typescript
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({...})
 export class Product {
-  private router = inject(Router);
+  readonly #router = inject(Router);
+  readonly #route = inject(ActivatedRoute);
   
   // Navigate to route
-  goToProducts() {
-    this.router.navigate(['/products']);
+  protected goToProducts() {
+    this.#router.navigate(['/products']);
   }
   
   // Navigate with params
-  goToProduct(id: string) {
-    this.router.navigate(['/products', id]);
+  protected goToProduct(id: string) {
+    this.#router.navigate(['/products', id]);
   }
   
   // Navigate with query params
-  search(query: string) {
-    this.router.navigate(['/search'], {
+  protected search(query: string) {
+    this.#router.navigate(['/search'], {
       queryParams: { q: query, page: 1 },
     });
   }
   
   // Navigate relative to current route
-  goToEdit() {
-    this.router.navigate(['edit'], { relativeTo: this.route });
+  protected goToEdit() {
+    this.#router.navigate(['edit'], { relativeTo: this.#route });
   }
   
   // Replace current history entry
-  replaceUrl() {
-    this.router.navigate(['/new-page'], { replaceUrl: true });
+  protected replaceUrl() {
+    this.#router.navigate(['/new-page'], { replaceUrl: true });
   }
 }
 ```
@@ -361,13 +362,13 @@ export class Product {
 // Access in component
 @Component({...})
 export class AdminCmpt {
-  title = input<string>(); // From route data
-  roles = input<string[]>(); // From route data
+  protected readonly title = input<string>(); // From route data
+  protected readonly roles = input<string[]>(); // From route data
 }
 
 // Or via ActivatedRoute
-private route = inject(ActivatedRoute);
-data = toSignal(this.route.data);
+readonly #route = inject(ActivatedRoute);
+protected readonly data = toSignal(this.#route.data);
 ```
 
 ## Router Events
@@ -378,12 +379,12 @@ import { filter } from 'rxjs';
 
 @Component({...})
 export class AppMain {
-  private router = inject(Router);
+  readonly #router = inject(Router);
   
-  isNavigating = signal(false);
+  protected readonly isNavigating = signal(false);
   
   constructor() {
-    this.router.events.pipe(
+    this.#router.events.pipe(
       filter(e => e instanceof NavigationStart || e instanceof NavigationEnd)
     ).subscribe(event => {
       this.isNavigating.set(event instanceof NavigationStart);

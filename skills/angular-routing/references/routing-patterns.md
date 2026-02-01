@@ -67,23 +67,23 @@ export const userTitleResolver: ResolveFn<string> = (route) => {
 // auth.service.ts
 @Injectable({ providedIn: 'root' })
 export class Auth {
-  private _user = signal<User | null>(null);
-  private _token = signal<string | null>(null);
+  readonly #_user = signal<User | null>(null);
+  readonly #_token = signal<string | null>(null);
   
-  readonly user = this._user.asReadonly();
-  readonly isAuthenticated = computed(() => this._user() !== null);
+  readonly user = this.#_user.asReadonly();
+  readonly isAuthenticated = computed(() => this.#_user() !== null);
   
-  private router = inject(Router);
-  private http = inject(HttpClient);
+  readonly #router = inject(Router);
+  readonly #http = inject(HttpClient);
   
   async login(credentials: Credentials): Promise<boolean> {
     try {
       const response = await firstValueFrom(
-        this.http.post<AuthResponse>('/api/login', credentials)
+        this.#http.post<AuthResponse>('/api/login', credentials)
       );
       
-      this._token.set(response.token);
-      this._user.set(response.user);
+      this.#_token.set(response.token);
+      this.#_user.set(response.user);
       localStorage.setItem('token', response.token);
       
       return true;
@@ -93,10 +93,10 @@ export class Auth {
   }
   
   logout(): void {
-    this._user.set(null);
-    this._token.set(null);
+    this.#_user.set(null);
+    this.#_token.set(null);
     localStorage.removeItem('token');
-    this.router.navigate(['/login']);
+    this.#router.navigate(['/login']);
   }
   
   async checkAuth(): Promise<boolean> {
@@ -105,10 +105,10 @@ export class Auth {
     
     try {
       const user = await firstValueFrom(
-        this.http.get<User>('/api/me')
+        this.#http.get<User>('/api/me')
       );
-      this._user.set(user);
-      this._token.set(token);
+      this.#_user.set(user);
+      this.#_token.set(token);
       return true;
     } catch {
       localStorage.removeItem('token');
@@ -150,22 +150,22 @@ export const authGuard: CanActivateFn = async (route, state) => {
   `,
 })
 export class Login {
-  private authService = inject(Auth);
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
+  readonly #authService = inject(Auth);
+  readonly #router = inject(Router);
+  readonly #route = inject(ActivatedRoute);
   
-  email = '';
-  password = '';
+  protected email = '';
+  protected password = '';
   
-  async login() {
-    const success = await this.authService.login({
+  protected async login() {
+    const success = await this.#authService.login({
       email: this.email,
       password: this.password,
     });
     
     if (success) {
-      const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-      this.router.navigateByUrl(returnUrl);
+      const returnUrl = this.#route.snapshot.queryParams['returnUrl'] || '/';
+      this.#router.navigateByUrl(returnUrl);
     }
   }
 }
@@ -177,18 +177,18 @@ export class Login {
 // breadcrumb.service.ts
 @Injectable({ providedIn: 'root' })
 export class Breadcrumb {
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
+  readonly #router = inject(Router);
+  readonly #route = inject(ActivatedRoute);
   
-  breadcrumbs = toSignal(
-    this.router.events.pipe(
+  readonly breadcrumbs = toSignal(
+    this.#router.events.pipe(
       filter(event => event instanceof NavigationEnd),
-      map(() => this.buildBreadcrumbs(this.route.root))
+      map(() => this.#buildBreadcrumbs(this.#route.root))
     ),
     { initialValue: [] }
   );
   
-  private buildBreadcrumbs(
+  #buildBreadcrumbs(
     route: ActivatedRoute,
     url: string = '',
     breadcrumbs: Breadcrumb[] = []
@@ -213,7 +213,7 @@ export class Breadcrumb {
         breadcrumbs.push({ label, url });
       }
       
-      return this.buildBreadcrumbs(child, url, breadcrumbs);
+      return this.#buildBreadcrumbs(child, url, breadcrumbs);
     }
     
     return breadcrumbs;
@@ -253,7 +253,7 @@ export const routes: Routes = [
   `,
 })
 export class BreadcrumbCmpt {
-  breadcrumbService = inject(Breadcrumb);
+  protected readonly breadcrumbService = inject(Breadcrumb);
 }
 ```
 
@@ -281,7 +281,7 @@ export class BreadcrumbCmpt {
   `,
 })
 export class TabsLayout {
-  tabs = [
+  protected readonly tabs = [
     { path: './', label: 'Overview', exact: true },
     { path: 'details', label: 'Details', exact: false },
     { path: 'settings', label: 'Settings', exact: false },
@@ -443,8 +443,10 @@ export const routes: Routes = [
   ],
 })
 export class AppMain {
-  getRouteAnimationData() {
-    return this.route.firstChild?.snapshot.data['animation'];
+  readonly #route = inject(ActivatedRoute);
+
+  protected getRouteAnimationData() {
+    return this.#route.firstChild?.snapshot.data['animation'];
   }
 }
 ```
