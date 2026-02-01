@@ -184,7 +184,7 @@ export class TodoList {
   // Actions
   protected addTodo() {
     const text = this.newTodo().trim();
-    if (text) {
+    if (text.length > 0) {
       this.todos.update(todos => [
         ...todos,
         { id: crypto.randomUUID(), text, done: false }
@@ -233,9 +233,9 @@ import { switchMap, debounceTime } from 'rxjs';
 
 @Component({...})
 export class Search {
-  protected readonly query = signal('');
-  
   readonly #http = inject(HttpClient);
+    
+  protected readonly query = signal('');
   
   // Convert signal to observable for RxJS operators
   protected readonly results = toSignal(
@@ -283,6 +283,8 @@ const result = computed(() => {
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class Auth {
+  readonly #http = inject(HttpClient);
+    
   // Private writable state
   readonly #user = signal<User | null>(null);
   readonly #loading = signal(false);
@@ -291,8 +293,6 @@ export class Auth {
   readonly user = this.#user.asReadonly();
   readonly loading = this.#loading.asReadonly();
   readonly isAuthenticated = computed(() => this.#user() !== null);
-  
-  readonly #http = inject(HttpClient);
   
   async login(credentials: Credentials): Promise<void> {
     this.#loading.set(true);

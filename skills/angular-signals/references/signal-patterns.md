@@ -104,6 +104,8 @@ interface ProductState {
 
 @Injectable({ providedIn: 'root' })
 export class ProductSt {
+  readonly #http = inject(HttpClient);
+    
   // Private state
   readonly #state = signal<ProductState>({
     products: [],
@@ -132,8 +134,6 @@ export class ProductSt {
     const { products, selectedId } = this.#state();
     return products.find(p => p.id === selectedId) ?? null;
   });
-  
-  readonly #http = inject(HttpClient);
   
   // Actions
   setFilter(filter: string): void {
@@ -292,10 +292,10 @@ export class Search {
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class Todo {
-  readonly #todos = signal<Todo[]>([]);
-  readonly items = this.#todos.asReadonly();
-  
   readonly #http = inject(HttpClient);
+    
+  readonly #todos = signal<Todo[]>([]);
+  get items(): Sig<Todo[]> { return this.#todos.asReadonly(); }
   
   async toggleTodo(id: string): Promise<void> {
     // Optimistic update
