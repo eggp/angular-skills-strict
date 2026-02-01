@@ -101,7 +101,7 @@ import { signal, effect, inject, DestroyRef } from '@angular/core';
 
 @Component({...})
 export class Search {
-  query = signal('');
+  protected readonly query = signal('');
   
   constructor() {
     // Effect runs when query changes
@@ -117,6 +117,18 @@ export class Search {
       
       onCleanup(() => clearInterval(timer));
     });
+
+    // Self-destroying effect (Performance optimization)
+    const effectRef = effect(() => {
+      if (this.check()) {
+        // ...
+        effectRef.destroy();
+      }
+    });
+  }
+
+  protected check(): boolean {
+    return true;
   }
 }
 ```
@@ -135,7 +147,8 @@ export class Search {
     <button (click)="addTodo()" [disabled]="!canAdd()">Add</button>
     
     <ul>
-      @for (todo of filteredTodos(); track todo.id) {
+      @let visibleTodos = filteredTodos();
+      @for (todo of visibleTodos; track todo.id) {
         <li [class.done]="todo.done">
           {{ todo.text }}
           <button (click)="toggleTodo(todo.id)">Toggle</button>
@@ -148,14 +161,14 @@ export class Search {
 })
 export class TodoList {
   // State
-  todos = signal<Todo[]>([]);
-  newTodo = signal('');
-  filter = signal<'all' | 'active' | 'done'>('all');
+  protected readonly todos = signal<Todo[]>([]);
+  protected readonly newTodo = signal('');
+  protected readonly filter = signal<'all' | 'active' | 'done'>('all');
   
   // Derived state
-  canAdd = computed(() => this.newTodo().trim().length > 0);
+  protected readonly canAdd = computed(() => this.newTodo().trim().length > 0);
   
-  filteredTodos = computed(() => {
+  protected readonly filteredTodos = computed(() => {
     const todos = this.todos();
     switch (this.filter()) {
       case 'active': return todos.filter(t => !t.done);
@@ -164,14 +177,14 @@ export class TodoList {
     }
   });
   
-  remaining = computed(() => 
+  protected readonly remaining = computed(() =>
     this.todos().filter(t => !t.done).length
   );
   
   // Actions
-  addTodo() {
+  protected addTodo() {
     const text = this.newTodo().trim();
-    if (text) {
+    if (text.length > 0) {
       this.todos.update(todos => [
         ...todos,
         { id: crypto.randomUUID(), text, done: false }
@@ -180,7 +193,7 @@ export class TodoList {
     }
   }
   
-  toggleTodo(id: string) {
+  protected toggleTodo(id: string) {
     this.todos.update(todos =>
       todos.map(t => t.id === id ? { ...t, done: !t.done } : t)
     );
@@ -198,17 +211,17 @@ import { interval } from 'rxjs';
 
 @Component({...})
 export class Timer {
-  private http = inject(HttpClient);
+  readonly #http = inject(HttpClient);
   
   // From observable - requires initial value or allowUndefined
-  counter = toSignal(interval(1000), { initialValue: 0 });
+  protected readonly counter = toSignal(interval(1000), { initialValue: 0 });
   
   // From HTTP - undefined until loaded
-  users = toSignal(this.http.get<User[]>('/api/users'));
+  protected readonly users = toSignal(this.#http.get<User[]>('/api/users'));
   
   // With requireSync for synchronous observables (BehaviorSubject)
-  private user$ = new BehaviorSubject<User | null>(null);
-  currentUser = toSignal(this.user$, { requireSync: true });
+  readonly #user$ = new BehaviorSubject<User | null>(null);
+  protected readonly currentUser = toSignal(this.#user$, { requireSync: true });
 }
 ```
 
@@ -220,15 +233,15 @@ import { switchMap, debounceTime } from 'rxjs';
 
 @Component({...})
 export class Search {
-  query = signal('');
-  
-  private http = inject(HttpClient);
+  readonly #http = inject(HttpClient);
+    
+  protected readonly query = signal('');
   
   // Convert signal to observable for RxJS operators
-  results = toSignal(
+  protected readonly results = toSignal(
     toObservable(this.query).pipe(
       debounceTime(300),
-      switchMap(q => this.http.get<Result[]>(`/api/search?q=${q}`))
+      switchMap(q => this.#http.get<Result[]>(`/api/search?q=${q}`))
     ),
     { initialValue: [] }
   );
@@ -270,31 +283,31 @@ const result = computed(() => {
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class Auth {
+  readonly #http = inject(HttpClient);
+    
   // Private writable state
-  private _user = signal<User | null>(null);
-  private _loading = signal(false);
+  readonly #user = signal<User | null>(null);
+  readonly #loading = signal(false);
   
   // Public read-only signals
-  readonly user = this._user.asReadonly();
-  readonly loading = this._loading.asReadonly();
-  readonly isAuthenticated = computed(() => this._user() !== null);
-  
-  private http = inject(HttpClient);
+  readonly user = this.#user.asReadonly();
+  readonly loading = this.#loading.asReadonly();
+  readonly isAuthenticated = computed(() => this.#user() !== null);
   
   async login(credentials: Credentials): Promise<void> {
-    this._loading.set(true);
+    this.#loading.set(true);
     try {
       const user = await firstValueFrom(
-        this.http.post<User>('/api/login', credentials)
+        this.#http.post<User>('/api/login', credentials)
       );
-      this._user.set(user);
+      this.#user.set(user);
     } finally {
-      this._loading.set(false);
+      this.#loading.set(false);
     }
   }
   
   logout(): void {
-    this._user.set(null);
+    this.#user.set(null);
   }
 }
 ```
