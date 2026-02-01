@@ -33,14 +33,14 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
   `,
 })
 export class Login {
-  private fb = inject(FormBuilder);
+  readonly #fb = inject(FormBuilder);
   
-  form = this.fb.group({
+  protected readonly form = this.#fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
   
-  onSubmit() {
+  protected onSubmit() {
     if (this.form.valid) {
       console.log(this.form.value);
     }
@@ -98,12 +98,12 @@ import { NonNullableFormBuilder } from '@angular/forms';
 
 @Component({...})
 export class Profile {
-  private fb = inject(NonNullableFormBuilder);
+  readonly #fb = inject(NonNullableFormBuilder);
   
-  form = this.fb.group({
+  protected readonly form = this.#fb.group({
     name: ['', Validators.required],           // FormControl<string>
     email: ['', [Validators.required, Validators.email]],
-    preferences: this.fb.group({
+    preferences: this.#fb.group({
       newsletter: [false],                      // FormControl<boolean>
       theme: ['light' as 'light' | 'dark'],    // FormControl<'light' | 'dark'>
     }),
@@ -133,11 +133,11 @@ export class Profile {
   `,
 })
 export class Profile {
-  private fb = inject(NonNullableFormBuilder);
+  readonly #fb = inject(NonNullableFormBuilder);
   
-  form = this.fb.group({
+  protected readonly form = this.#fb.group({
     name: ['', Validators.required],
-    address: this.fb.group({
+    address: this.#fb.group({
       street: [''],
       city: ['', Validators.required],
       zip: ['', [Validators.required, Validators.pattern(/^\d{5}$/)]],
@@ -169,28 +169,28 @@ import { FormArray } from '@angular/forms';
   `,
 })
 export class Order {
-  private fb = inject(NonNullableFormBuilder);
+  readonly #fb = inject(NonNullableFormBuilder);
   
-  form = this.fb.group({
-    items: this.fb.array([this.createItem()]),
+  protected readonly form = this.#fb.group({
+    items: this.#fb.array([this.#createItem()]),
   });
   
-  get items() {
+  protected get items() {
     return this.form.controls.items;
   }
   
-  createItem() {
-    return this.fb.group({
+  #createItem() {
+    return this.#fb.group({
       product: ['', Validators.required],
       quantity: [1, [Validators.required, Validators.min(1)]],
     });
   }
   
-  addItem() {
-    this.items.push(this.createItem());
+  protected addItem() {
+    this.items.push(this.#createItem());
   }
   
-  removeItem(index: number) {
+  protected removeItem(index: number) {
     this.items.removeAt(index);
   }
 }
@@ -355,7 +355,7 @@ form.events.subscribe(event => {
 })
 export class Form {
   // Helper for cleaner templates
-  hasError(controlName: string, errorKey: string): boolean {
+  protected hasError(controlName: string, errorKey: string): boolean {
     const control = this.form.get(controlName);
     return control?.hasError(errorKey) && control?.touched || false;
   }
@@ -369,29 +369,29 @@ export class Form {
   template: `
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
       <!-- fields -->
-      <button type="submit" [disabled]="form.invalid || isSubmitting">
-        {{ isSubmitting ? 'Submitting...' : 'Submit' }}
+      <button type="submit" [disabled]="form.invalid || isSubmitting()">
+        {{ isSubmitting() ? 'Submitting...' : 'Submit' }}
       </button>
     </form>
   `,
 })
 export class Form {
-  isSubmitting = false;
+  protected readonly isSubmitting = signal(false);
   
-  async onSubmit() {
+  protected async onSubmit() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     
-    this.isSubmitting = true;
+    this.isSubmitting.set(true);
     try {
       await this.api.submit(this.form.getRawValue());
       this.form.reset();
     } catch (error) {
       // Handle error
     } finally {
-      this.isSubmitting = false;
+      this.isSubmitting.set(false);
     }
   }
 }

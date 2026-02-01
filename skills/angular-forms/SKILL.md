@@ -25,20 +25,23 @@ interface LoginData {
   imports: [FormField],
   template: `
     <form (submit)="onSubmit($event)">
+      @let email = loginForm.email();
+      @let password = loginForm.password();
+
       <label>
         Email
         <input type="email" [formField]="loginForm.email" />
       </label>
-      @if (loginForm.email().touched() && loginForm.email().invalid()) {
-        <p class="error">{{ loginForm.email().errors()[0].message }}</p>
+      @if (email.touched() && email.invalid()) {
+        <p class="error">{{ email.errors()[0].message }}</p>
       }
       
       <label>
         Password
         <input type="password" [formField]="loginForm.password" />
       </label>
-      @if (loginForm.password().touched() && loginForm.password().invalid()) {
-        <p class="error">{{ loginForm.password().errors()[0].message }}</p>
+      @if (password.touched() && password.invalid()) {
+        <p class="error">{{ password.errors()[0].message }}</p>
       }
       
       <button type="submit" [disabled]="loginForm().invalid()">Login</button>
@@ -47,19 +50,19 @@ interface LoginData {
 })
 export class Login {
   // Form model - a writable signal
-  loginModel = signal<LoginData>({
+  protected readonly loginModel = signal<LoginData>({
     email: '',
     password: '',
   });
   
   // Create form with validation schema
-  loginForm = form(this.loginModel, (schemaPath) => {
+  protected readonly loginForm = form(this.loginModel, (schemaPath) => {
     required(schemaPath.email, { message: 'Email is required' });
     email(schemaPath.email, { message: 'Enter a valid email address' });
     required(schemaPath.password, { message: 'Password is required' });
   });
   
-  onSubmit(event: Event) {
+  protected onSubmit(event: Event) {
     event.preventDefault();
     if (this.loginForm().valid()) {
       const credentials = this.loginModel();
@@ -323,13 +326,13 @@ import { submit } from '@angular/forms/signals';
   `,
 })
 export class Login {
-  model = signal({ email: '', password: '' });
-  form = form(this.model, (schemaPath) => {
+  protected readonly model = signal({ email: '', password: '' });
+  protected readonly form = form(this.model, (schemaPath) => {
     required(schemaPath.email);
     required(schemaPath.password);
   });
   
-  onSubmit(event: Event) {
+  protected onSubmit(event: Event) {
     event.preventDefault();
     
     // submit() marks all fields touched and runs callback if valid
@@ -360,30 +363,51 @@ interface Order {
   `,
 })
 export class Order {
-  orderModel = signal<Order>({
+  protected readonly orderModel = signal<Order>({
     items: [{ product: '', quantity: 1 }],
   });
   
-  orderForm = form(this.orderModel, (schemaPath) => {
+  protected readonly orderForm = form(this.orderModel, (schemaPath) => {
     applyEach(schemaPath.items, (item) => {
       required(item.product, { message: 'Product required' });
       min(item.quantity, 1, { message: 'Min quantity is 1' });
     });
   });
   
-  addItem() {
+  protected addItem() {
     this.orderModel.update(m => ({
       ...m,
       items: [...m.items, { product: '', quantity: 1 }],
     }));
   }
   
-  removeItem(index: number) {
+  protected removeItem(index: number) {
     this.orderModel.update(m => ({
       ...m,
       items: m.items.filter((_, i) => i !== index),
     }));
   }
+}
+```
+
+## Template Optimization
+
+When accessing signal values multiple times in a template, use `@let` to cache the value. This improves performance and code readability.
+
+### BAD: Repeated Signal Execution
+
+```html
+@if (form.email().touched() && form.email().invalid()) {
+  <p>{{ form.email().errors()[0].message }}</p>
+}
+```
+
+### GOOD: Cached Signal Value
+
+```html
+@let email = form.email();
+@if (email.touched() && email.invalid()) {
+  <p>{{ email.errors()[0].message }}</p>
 }
 ```
 
