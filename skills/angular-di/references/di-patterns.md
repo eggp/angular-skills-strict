@@ -17,27 +17,27 @@ Combine multiple services into a single API:
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class ShopFacade {
-  private productService = inject(Product);
-  private cartService = inject(Cart);
-  private orderService = inject(Order);
+  readonly #productService = inject(Product);
+  readonly #cartService = inject(Cart);
+  readonly #orderService = inject(Order);
   
   // Expose combined state
-  readonly products = this.productService.products;
-  readonly cart = this.cartService.items;
-  readonly cartTotal = this.cartService.total;
+  readonly products = this.#productService.products;
+  readonly cart = this.#cartService.items;
+  readonly cartTotal = this.#cartService.total;
   
   // Unified actions
   addToCart(productId: string, quantity: number) {
-    const product = this.productService.getById(productId);
+    const product = this.#productService.getById(productId);
     if (product) {
-      this.cartService.add(product, quantity);
+      this.#cartService.add(product, quantity);
     }
   }
   
   async checkout() {
-    const items = this.cartService.items();
-    const order = await this.orderService.create(items);
-    this.cartService.clear();
+    const items = this.#cartService.items();
+    const order = await this.#orderService.create(items);
+    this.#cartService.clear();
     return order;
   }
 }
@@ -54,33 +54,33 @@ interface UserState {
 
 @Injectable({ providedIn: 'root' })
 export class UserState {
-  private state = signal<UserState>({
+  readonly #state = signal<UserState>({
     user: null,
     loading: false,
     error: null,
   });
   
   // Selectors
-  readonly user = computed(() => this.state().user);
-  readonly loading = computed(() => this.state().loading);
-  readonly error = computed(() => this.state().error);
-  readonly isAuthenticated = computed(() => this.state().user !== null);
+  readonly user = computed(() => this.#state().user);
+  readonly loading = computed(() => this.#state().loading);
+  readonly error = computed(() => this.#state().error);
+  readonly isAuthenticated = computed(() => this.#state().user !== null);
   
   // Actions
   setUser(user: User) {
-    this.state.update(s => ({ ...s, user, loading: false, error: null }));
+    this.#state.update(s => ({ ...s, user, loading: false, error: null }));
   }
   
   setLoading() {
-    this.state.update(s => ({ ...s, loading: true, error: null }));
+    this.#state.update(s => ({ ...s, loading: true, error: null }));
   }
   
   setError(error: string) {
-    this.state.update(s => ({ ...s, loading: false, error }));
+    this.#state.update(s => ({ ...s, loading: false, error }));
   }
   
   clear() {
-    this.state.set({ user: null, loading: false, error: null });
+    this.#state.set({ user: null, loading: false, error: null });
   }
 }
 ```
@@ -100,31 +100,31 @@ export abstract class Repository<T extends { id: string }> {
 // HTTP implementation
 @Injectable()
 export class HttpUserRepo extends Repository<User> {
-  private http = inject(HttpClient);
-  private apiUrl = inject(API_URL);
+  readonly #http = inject(HttpClient);
+  readonly #apiUrl = inject(API_URL);
   
   async getAll(): Promise<User[]> {
-    return firstValueFrom(this.http.get<User[]>(`${this.apiUrl}/users`));
+    return firstValueFrom(this.#http.get<User[]>(`${this.#apiUrl}/users`));
   }
   
   async getById(id: string): Promise<User | null> {
     return firstValueFrom(
-      this.http.get<User>(`${this.apiUrl}/users/${id}`).pipe(
+      this.#http.get<User>(`${this.#apiUrl}/users/${id}`).pipe(
         catchError(() => of(null))
       )
     );
   }
   
   async create(user: Omit<User, 'id'>): Promise<User> {
-    return firstValueFrom(this.http.post<User>(`${this.apiUrl}/users`, user));
+    return firstValueFrom(this.#http.post<User>(`${this.#apiUrl}/users`, user));
   }
   
   async update(id: string, user: Partial<User>): Promise<User> {
-    return firstValueFrom(this.http.patch<User>(`${this.apiUrl}/users/${id}`, user));
+    return firstValueFrom(this.#http.patch<User>(`${this.#apiUrl}/users/${id}`, user));
   }
   
   async delete(id: string): Promise<void> {
-    await firstValueFrom(this.http.delete(`${this.apiUrl}/users/${id}`));
+    await firstValueFrom(this.#http.delete(`${this.#apiUrl}/users/${id}`));
   }
 }
 
@@ -163,22 +163,22 @@ export class ConsoleLog extends Logger {
 // Remote implementation
 @Injectable()
 export class RemoteLog extends Logger {
-  private http = inject(HttpClient);
+  readonly #http = inject(HttpClient);
   
   log(message: string) {
-    this.send('log', message);
+    this.#send('log', message);
   }
   
   error(message: string, error?: Error) {
-    this.send('error', message, error);
+    this.#send('error', message, error);
   }
   
   warn(message: string) {
-    this.send('warn', message);
+    this.#send('warn', message);
   }
   
-  private send(level: string, message: string, error?: Error) {
-    this.http.post('/api/logs', { level, message, error: error?.message }).subscribe();
+  #send(level: string, message: string, error?: Error) {
+    this.#http.post('/api/logs', { level, message, error: error?.message }).subscribe();
   }
 }
 
@@ -191,10 +191,10 @@ export class RemoteLog extends Logger {
 // Inject using abstract class
 @Injectable({ providedIn: 'root' })
 export class User {
-  private logger = inject(Logger);
+  readonly #logger = inject(Logger);
 
   createUser(user: UserData) {
-    this.logger.log(`Creating user: ${user.email}`);
+    this.#logger.log(`Creating user: ${user.email}`);
     // ...
   }
 }
@@ -216,7 +216,7 @@ export class User {
   `,
 })
 export class FormContainer {
-  private formState = inject(FormState);
+  readonly #formState = inject(FormState);
 }
 
 // Children share same instance
@@ -226,7 +226,7 @@ export class FormContainer {
 })
 export class FormBody {
   // Gets same instance as parent
-  private formState = inject(FormState);
+  readonly #formState = inject(FormState);
 }
 
 // Grandchildren also share
@@ -236,7 +236,7 @@ export class FormBody {
 })
 export class FormField {
   // Gets same instance from ancestor
-  private formState = inject(FormState);
+  readonly #formState = inject(FormState);
 }
 ```
 
@@ -286,9 +286,9 @@ interface FeatureFlags {
 // Use in components
 @Component({...})
 export class Dashboard {
-  private features = inject(FEATURE_FLAGS);
+  readonly #features = inject(FEATURE_FLAGS);
   
-  showNewDashboard = this.features.newDashboard;
+  readonly showNewDashboard = this.#features.newDashboard;
 }
 ```
 
@@ -310,11 +310,11 @@ export class BrowserStorage extends Storage {
 
 @Injectable()
 export class ServerStorage extends Storage {
-  private store = new Map<string, string>();
+  readonly #store = new Map<string, string>();
 
-  get(key: string) { return this.store.get(key) ?? null; }
-  set(key: string, value: string) { this.store.set(key, value); }
-  remove(key: string) { this.store.delete(key); }
+  get(key: string) { return this.#store.get(key) ?? null; }
+  set(key: string, value: string) { this.#store.set(key, value); }
+  remove(key: string) { this.#store.delete(key); }
 }
 
 // Provide based on platform
@@ -403,12 +403,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({...})
 export class Data {
-  private destroyRef = inject(DestroyRef);
-  private dataService = inject(DataSvc);
+  readonly #destroyRef = inject(DestroyRef);
+  readonly #dataService = inject(DataSvc);
   
   constructor() {
     // Auto-unsubscribe when component destroys
-    this.dataService.data$
+    this.#dataService.data$
       .pipe(takeUntilDestroyed())
       .subscribe(data => {
         console.log(data);
@@ -417,9 +417,9 @@ export class Data {
   
   // Or use DestroyRef directly
   ngOnInit() {
-    const subscription = this.dataService.updates$.subscribe();
+    const subscription = this.#dataService.updates$.subscribe();
     
-    this.destroyRef.onDestroy(() => {
+    this.#destroyRef.onDestroy(() => {
       subscription.unsubscribe();
       console.log('Cleaned up!');
     });
@@ -432,17 +432,17 @@ export class Data {
 ```typescript
 @Injectable()
 export class WebSocket {
-  private destroyRef = inject(DestroyRef);
-  private socket: WebSocket | null = null;
+  readonly #destroyRef = inject(DestroyRef);
+  #socket: WebSocket | null = null;
   
   constructor() {
-    this.destroyRef.onDestroy(() => {
-      this.socket?.close();
+    this.#destroyRef.onDestroy(() => {
+      this.#socket?.close();
     });
   }
   
   connect(url: string) {
-    this.socket = new WebSocket(url);
+    this.#socket = new WebSocket(url);
   }
 }
 ```
@@ -452,12 +452,12 @@ export class WebSocket {
 ```typescript
 @Component({...})
 export class My {
-  private destroyRef = inject(DestroyRef);
+  readonly #destroyRef = inject(DestroyRef);
 
   loadData() {
     // Pass destroyRef when using outside constructor
     this.http.get('/api/data')
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(takeUntilDestroyed(this.#destroyRef))
       .subscribe();
   }
 }
@@ -478,7 +478,7 @@ export function injectLogger(): Logger {
 // Usage - must be called in injection context
 @Component({...})
 export class My2 {
-  private logger = injectLogger(); // OK
+  readonly #logger = injectLogger(); // OK
 
   someMethod() {
     // injectLogger(); // ERROR - not in injection context
@@ -513,7 +513,7 @@ export function injectQueryParam(param: string): Signal<string | null> {
 // Usage
 @Component({...})
 export class UserCmpt {
-  userId = injectRouteParam('id');
-  tab = injectQueryParam('tab');
+  readonly userId = injectRouteParam('id');
+  readonly tab = injectQueryParam('tab');
 }
 ```
