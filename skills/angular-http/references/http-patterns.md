@@ -25,42 +25,42 @@ export interface User {
 
 @Injectable({ providedIn: 'root' })
 export class User {
-  private http = inject(HttpClient);
-  private baseUrl = '/api/users';
+  readonly #http = inject(HttpClient);
+  readonly #baseUrl = '/api/users';
   
   // Current user ID for reactive fetching
-  private currentUserId = signal<string | null>(null);
+  readonly #currentUserId = signal<string | null>(null);
   
   // Reactive resource that updates when currentUserId changes
-  currentUser = httpResource<User>(() => {
-    const id = this.currentUserId();
-    return id ? `${this.baseUrl}/${id}` : undefined;
+  readonly currentUser = httpResource<User>(() => {
+    const id = this.#currentUserId();
+    return id ? `${this.#baseUrl}/${id}` : undefined;
   });
   
   // Set current user to fetch
   selectUser(id: string) {
-    this.currentUserId.set(id);
+    this.#currentUserId.set(id);
   }
   
   // CRUD operations
   getAll() {
-    return this.http.get<User[]>(this.baseUrl);
+    return this.#http.get<User[]>(this.#baseUrl);
   }
   
   getById(id: string) {
-    return this.http.get<User>(`${this.baseUrl}/${id}`);
+    return this.#http.get<User>(`${this.#baseUrl}/${id}`);
   }
   
   create(user: Omit<User, 'id'>) {
-    return this.http.post<User>(this.baseUrl, user);
+    return this.#http.post<User>(this.#baseUrl, user);
   }
   
   update(id: string, user: Partial<User>) {
-    return this.http.patch<User>(`${this.baseUrl}/${id}`, user);
+    return this.#http.patch<User>(`${this.#baseUrl}/${id}`, user);
   }
   
   delete(id: string) {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+    return this.#http.delete<void>(`${this.#baseUrl}/${id}`);
   }
 }
 ```
@@ -72,29 +72,29 @@ export class User {
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class CachedUser {
-  private http = inject(HttpClient);
-  private cache = new Map<string, { data: User; timestamp: number }>();
-  private cacheDuration = 5 * 60 * 1000; // 5 minutes
+  readonly #http = inject(HttpClient);
+  readonly #cache = new Map<string, { data: User; timestamp: number }>();
+  readonly #cacheDuration = 5 * 60 * 1000; // 5 minutes
   
   getUser(id: string): Observable<User> {
-    const cached = this.cache.get(id);
+    const cached = this.#cache.get(id);
     
-    if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
+    if (cached && Date.now() - cached.timestamp < this.#cacheDuration) {
       return of(cached.data);
     }
     
-    return this.http.get<User>(`/api/users/${id}`).pipe(
+    return this.#http.get<User>(`/api/users/${id}`).pipe(
       tap(user => {
-        this.cache.set(id, { data: user, timestamp: Date.now() });
+        this.#cache.set(id, { data: user, timestamp: Date.now() });
       })
     );
   }
   
   invalidateCache(id?: string) {
     if (id) {
-      this.cache.delete(id);
+      this.#cache.delete(id);
     } else {
-      this.cache.clear();
+      this.#cache.clear();
     }
   }
 }
@@ -105,16 +105,16 @@ export class CachedUser {
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class UserCache {
-  private http = inject(HttpClient);
+  readonly #http = inject(HttpClient);
   
   // Cache as signal
-  private usersCache = signal<Map<string, User>>(new Map());
+  readonly #usersCache = signal<Map<string, User>>(new Map());
   
   // Computed for easy access
-  users = computed(() => Array.from(this.usersCache().values()));
+  readonly users = computed(() => Array.from(this.#usersCache().values()));
   
   getUser(id: string): User | undefined {
-    return this.usersCache().get(id);
+    return this.#usersCache().get(id);
   }
   
   async fetchUser(id: string): Promise<User> {
@@ -122,10 +122,10 @@ export class UserCache {
     if (cached) return cached;
     
     const user = await firstValueFrom(
-      this.http.get<User>(`/api/users/${id}`)
+      this.#http.get<User>(`/api/users/${id}`)
     );
     
-    this.usersCache.update(cache => {
+    this.#usersCache.update(cache => {
       const newCache = new Map(cache);
       newCache.set(id, user);
       return newCache;
@@ -151,11 +151,12 @@ interface PaginatedResponse<T> {
 
 @Component({
   template: `
-    @if (usersResource.isLoading()) {
+    @let resource = usersResource;
+    @if (resource.isLoading()) {
       <app-spinner />
-    } @else if (usersResource.hasValue()) {
+    } @else if (resource.value(); as value) {
       <ul>
-        @for (user of usersResource.value().data; track user.id) {
+        @for (user of value.data; track user.id) {
           <li>{{ user.name }}</li>
         }
       </ul>
@@ -166,21 +167,21 @@ interface PaginatedResponse<T> {
           [disabled]="page() === 1"
         >Previous</button>
         
-        <span>Page {{ page() }} of {{ usersResource.value().totalPages }}</span>
+        <span>Page {{ page() }} of {{ value.totalPages }}</span>
         
         <button 
           (click)="nextPage()" 
-          [disabled]="page() >= usersResource.value().totalPages"
+          [disabled]="page() >= value.totalPages"
         >Next</button>
       </div>
     }
   `,
 })
 export class UsersList {
-  page = signal(1);
-  pageSize = signal(10);
+  protected readonly page = signal(1);
+  protected readonly pageSize = signal(10);
   
-  usersResource = httpResource<PaginatedResponse<User>>(() => ({
+  protected readonly usersResource = httpResource<PaginatedResponse<User>>(() => ({
     url: '/api/users',
     params: {
       page: this.page().toString(),
@@ -188,11 +189,11 @@ export class UsersList {
     },
   }));
   
-  nextPage() {
+  protected nextPage() {
     this.page.update(p => p + 1);
   }
   
-  prevPage() {
+  protected prevPage() {
     this.page.update(p => Math.max(1, p - 1));
   }
 }
@@ -219,22 +220,22 @@ export class UsersList {
   `,
 })
 export class InfiniteUsers {
-  private http = inject(HttpClient);
+  readonly #http = inject(HttpClient);
   
-  private page = signal(1);
-  private users = signal<User[]>([]);
-  private totalPages = signal(1);
+  readonly #page = signal(1);
+  readonly #users = signal<User[]>([]);
+  readonly #totalPages = signal(1);
   
-  allUsers = this.users.asReadonly();
-  isLoading = signal(false);
-  hasMore = computed(() => this.page() < this.totalPages());
+  protected readonly allUsers = this.#users.asReadonly();
+  protected readonly isLoading = signal(false);
+  protected readonly hasMore = computed(() => this.#page() < this.#totalPages());
   
   constructor() {
     this.loadPage(1);
   }
   
-  loadMore() {
-    this.loadPage(this.page() + 1);
+  protected loadMore() {
+    this.loadPage(this.#page() + 1);
   }
   
   private async loadPage(page: number) {
@@ -242,14 +243,14 @@ export class InfiniteUsers {
     
     try {
       const response = await firstValueFrom(
-        this.http.get<PaginatedResponse<User>>('/api/users', {
+        this.#http.get<PaginatedResponse<User>>('/api/users', {
           params: { page: page.toString(), pageSize: '20' },
         })
       );
       
-      this.users.update(users => [...users, ...response.data]);
-      this.page.set(page);
-      this.totalPages.set(response.totalPages);
+      this.#users.update(users => [...users, ...response.data]);
+      this.#page.set(page);
+      this.#totalPages.set(response.totalPages);
     } finally {
       this.isLoading.set(false);
     }
@@ -266,24 +267,25 @@ export class InfiniteUsers {
   template: `
     <input type="file" (change)="onFileSelected($event)" />
     
-    @if (uploadProgress() !== null) {
-      <progress [value]="uploadProgress()" max="100"></progress>
+    @let progress = uploadProgress();
+    @if (progress !== null) {
+      <progress [value]="progress" max="100"></progress>
     }
   `,
 })
 export class FileUpload {
-  private http = inject(HttpClient);
+  readonly #http = inject(HttpClient);
   
-  uploadProgress = signal<number | null>(null);
+  protected readonly uploadProgress = signal<number | null>(null);
   
-  onFileSelected(event: Event) {
+  protected onFileSelected(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
     
     const formData = new FormData();
     formData.append('file', file);
     
-    this.http.post('/api/upload', formData, {
+    this.#http.post('/api/upload', formData, {
       reportProgress: true,
       observe: 'events',
     }).subscribe(event => {
@@ -318,7 +320,7 @@ uploadFiles(files: FileList) {
 
 ```typescript
 // resource() automatically handles cancellation via abortSignal
-searchResource = resource({
+protected readonly searchResource = resource({
   params: () => ({ q: this.query() }),
   loader: async ({ params, abortSignal }) => {
     const response = await fetch(`/api/search?q=${params.q}`, {
@@ -334,21 +336,21 @@ searchResource = resource({
 ```typescript
 @Component({...})
 export class Search implements OnDestroy {
-  private http = inject(HttpClient);
-  private destroyRef = inject(DestroyRef);
+  readonly #http = inject(HttpClient);
+  readonly #destroyRef = inject(DestroyRef);
   
-  query = signal('');
-  results = signal<Result[]>([]);
+  protected readonly query = signal('');
+  protected readonly results = signal<Result[]>([]);
   
-  private searchSubscription?: Subscription;
+  #searchSubscription?: Subscription;
   
-  search() {
+  protected search() {
     // Cancel previous request
-    this.searchSubscription?.unsubscribe();
+    this.#searchSubscription?.unsubscribe();
     
-    this.searchSubscription = this.http
+    this.#searchSubscription = this.#http
       .get<Result[]>(`/api/search?q=${this.query()}`)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(takeUntilDestroyed(this.#destroyRef))
       .subscribe(results => this.results.set(results));
   }
 }
@@ -359,16 +361,16 @@ export class Search implements OnDestroy {
 ```typescript
 @Component({...})
 export class SearchDebounced {
-  query = signal('');
+  protected readonly query = signal('');
   
-  private http = inject(HttpClient);
+  readonly #http = inject(HttpClient);
   
-  results = toSignal(
+  protected readonly results = toSignal(
     toObservable(this.query).pipe(
       debounceTime(300),
       distinctUntilChanged(),
       filter(q => q.length >= 2),
-      switchMap(q => this.http.get<Result[]>(`/api/search?q=${q}`)),
+      switchMap(q => this.#http.get<Result[]>(`/api/search?q=${q}`)),
       catchError(() => of([]))
     ),
     { initialValue: [] }
@@ -397,11 +399,14 @@ describe('UserCmpt', () => {
   
   it('should load user', () => {
     component.userId.set('123');
+    fixture.detectChanges();
     
     const req = httpMock.expectOne('/api/users/123');
     req.flush({ id: '123', name: 'Test User' });
+    fixture.detectChanges();
     
-    expect(component.userResource.value()?.name).toBe('Test User');
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('h1')?.textContent).toBe('Test User');
   });
   
   afterEach(() => {
