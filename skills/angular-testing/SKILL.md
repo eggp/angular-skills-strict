@@ -244,8 +244,9 @@ describe('Signal logic', () => {
 @Component({
   selector: 'app-todo-list',
   template: `
+    @let todos = filteredTodos();
     <ul>
-      @for (todo of filteredTodos(); track todo.id) {
+      @for (todo of todos; track todo.id) {
         <li>{{ todo.text }}</li>
       }
     </ul>
@@ -253,10 +254,10 @@ describe('Signal logic', () => {
   `,
 })
 export class TodoList {
-  todos = signal<Todo[]>([]);
-  filter = signal<'all' | 'active' | 'done'>('all');
+  protected readonly todos = signal<Todo[]>([]);
+  protected readonly filter = signal<'all' | 'active' | 'done'>('all');
   
-  filteredTodos = computed(() => {
+  protected readonly filteredTodos = computed(() => {
     const todos = this.todos();
     switch (this.filter()) {
       case 'active': return todos.filter(t => !t.done);
@@ -265,7 +266,7 @@ export class TodoList {
     }
   });
   
-  remaining = computed(() => this.todos().filter(t => !t.done).length);
+  protected readonly remaining = computed(() => this.todos().filter(t => !t.done).length);
 }
 
 describe('TodoList', () => {
@@ -282,24 +283,24 @@ describe('TodoList', () => {
   });
   
   it('should filter active todos', () => {
-    component.todos.set([
+    (component).todos.set([
       { id: '1', text: 'Task 1', done: false },
       { id: '2', text: 'Task 2', done: true },
       { id: '3', text: 'Task 3', done: false },
     ]);
     
-    component.filter.set('active');
+    (component).filter.set('active');
     
-    expect(component.filteredTodos().length).toBe(2);
-    expect(component.remaining()).toBe(2);
+    expect((component).filteredTodos().length).toBe(2);
+    expect((component).remaining()).toBe(2);
   });
   
   it('should render filtered todos', () => {
-    component.todos.set([
+    (component).todos.set([
       { id: '1', text: 'Active Task', done: false },
       { id: '2', text: 'Done Task', done: true },
     ]);
-    component.filter.set('active');
+    (component).filter.set('active');
     fixture.detectChanges();
     
     const items = fixture.nativeElement.querySelectorAll('li');
@@ -319,7 +320,7 @@ OnPush components require explicit change detection:
   template: `<span>{{ data().name }}</span>`,
 })
 export class OnPush {
-  data = input.required<{ name: string }>();
+  readonly data = input.required<{ name: string }>();
 }
 
 describe('OnPush', () => {
@@ -350,15 +351,15 @@ import { TestBed } from '@angular/core/testing';
 
 @Injectable({ providedIn: 'root' })
 export class CounterSvc {
-  private _count = signal(0);
-  readonly count = this._count.asReadonly();
+  readonly #count = signal(0);
+  get count(): Signal<number> { return this.#count.asReadonly(); }
   
   increment() {
-    this._count.update(c => c + 1);
+    this.#count.update(c => c + 1);
   }
   
   reset() {
-    this._count.set(0);
+    this.#count.set(0);
   }
 }
 
@@ -396,10 +397,10 @@ describe('CounterSvc', () => {
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class User {
-  private http = inject(HttpClient);
+  readonly #http = inject(HttpClient);
   
   getUser(id: string) {
-    return this.http.get<User>(`/api/users/${id}`);
+    return this.#http.get<User>(`/api/users/${id}`);
   }
 }
 
@@ -506,10 +507,10 @@ it('should show content when authenticated', () => {
   `,
 })
 export class Item {
-  item = input.required<Item>();
-  selected = output<Item>();
+  readonly item = input.required<Item>();
+  readonly selected = output<Item>();
   
-  select() {
+  protected select() {
     this.selected.emit(this.item());
   }
 }
@@ -582,14 +583,17 @@ it('should load data', waitForAsync(() => {
   template: `
     @if (userResource.isLoading()) {
       <p>Loading...</p>
-    } @else if (userResource.hasValue()) {
-      <p>{{ userResource.value().name }}</p>
+    } @else {
+      @let user = userResource.value();
+      @if (user) {
+        <p>{{ user.name }}</p>
+      }
     }
   `,
 })
 export class UserCmpt {
-  userId = signal('1');
-  userResource = httpResource<UserData>(() => `/api/users/${this.userId()}`);
+  protected readonly userId = signal('1');
+  protected readonly userResource = httpResource<UserData>(() => `/api/users/${this.userId()}`);
 }
 
 describe('UserCmpt', () => {
