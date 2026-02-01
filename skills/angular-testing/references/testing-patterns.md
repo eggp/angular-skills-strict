@@ -210,7 +210,7 @@ describe('Order', () => {
     ]);
     fixture.detectChanges();
     
-    expect(fixture.componentInstance.total()).toBe(30);
+    expect((fixture.componentInstance as any).total()).toBe(30);
   });
 });
 ```
@@ -228,24 +228,24 @@ export class CounterHarn extends ComponentHarness {
   static hostSelector = 'app-counter';
   
   // Locators
-  private getIncrementButton = this.locatorFor('button.increment');
-  private getDecrementButton = this.locatorFor('button.decrement');
-  private getCountDisplay = this.locatorFor('.count');
+  readonly #getIncrementButton = this.locatorFor('button.increment');
+  readonly #getDecrementButton = this.locatorFor('button.decrement');
+  readonly #getCountDisplay = this.locatorFor('.count');
   
   // Actions
   async increment(): Promise<void> {
-    const button = await this.getIncrementButton();
+    const button = await this.#getIncrementButton();
     await button.click();
   }
   
   async decrement(): Promise<void> {
-    const button = await this.getDecrementButton();
+    const button = await this.#getDecrementButton();
     await button.click();
   }
   
   // Queries
   async getCount(): Promise<number> {
-    const display = await this.getCountDisplay();
+    const display = await this.#getCountDisplay();
     const text = await display.text();
     return parseInt(text, 10);
   }
@@ -328,7 +328,7 @@ describe('Router Navigation', () => {
   it('should navigate to user page', async () => {
     const component = await harness.navigateByUrl('/users/123', UserCmpt);
     
-    expect(component.id()).toBe('123');
+    expect((component as any).id()).toBe('123');
   });
   
   it('should display user name', async () => {
@@ -401,16 +401,16 @@ import { form, FormField, required, email } from '@angular/forms/signals';
   `,
 })
 export class Login {
-  model = signal({ email: '', password: '' });
-  loginForm = form(this.model, (schemaPath) => {
+  protected readonly model = signal({ email: '', password: '' });
+  protected readonly loginForm = form(this.model, (schemaPath) => {
     required(schemaPath.email);
     email(schemaPath.email);
     required(schemaPath.password);
   });
   
-  submitted = signal(false);
+  protected readonly submitted = signal(false);
   
-  onSubmit(event: Event) {
+  protected onSubmit(event: Event) {
     event.preventDefault();
     if (this.loginForm().valid()) {
       this.submitted.set(true);
@@ -433,24 +433,24 @@ describe('Login', () => {
   });
   
   it('should be invalid when empty', () => {
-    expect(component.loginForm().invalid()).toBeTrue();
+    expect((component as any).loginForm().invalid()).toBeTrue();
   });
   
   it('should be valid with correct data', () => {
-    component.model.set({
+    (component as any).model.set({
       email: 'test@example.com',
       password: 'password123',
     });
     
-    expect(component.loginForm().valid()).toBeTrue();
+    expect((component as any).loginForm().valid()).toBeTrue();
   });
   
   it('should show email error for invalid email', () => {
-    component.loginForm.email().value.set('invalid');
+    (component as any).loginForm.email().value.set('invalid');
     fixture.detectChanges();
     
-    expect(component.loginForm.email().invalid()).toBeTrue();
-    expect(component.loginForm.email().errors().some(e => e.kind === 'email')).toBeTrue();
+    expect((component as any).loginForm.email().invalid()).toBeTrue();
+    expect((component as any).loginForm.email().errors().some(e => e.kind === 'email')).toBeTrue();
   });
   
   it('should disable submit button when invalid', () => {
@@ -505,7 +505,7 @@ describe('ReactiveForm', () => {
   },
 })
 export class Highlight {
-  color = input('yellow', { alias: 'appHighlight' });
+  readonly color = input('yellow', { alias: 'appHighlight' });
 }
 
 describe('Highlight', () => {
@@ -532,17 +532,17 @@ describe('Highlight', () => {
   selector: '[appIf]',
 })
 export class If {
-  private templateRef = inject(TemplateRef);
-  private viewContainer = inject(ViewContainerRef);
+  readonly #templateRef = inject(TemplateRef);
+  readonly #viewContainer = inject(ViewContainerRef);
   
-  condition = input.required<boolean>({ alias: 'appIf' });
+  readonly condition = input.required<boolean>({ alias: 'appIf' });
   
   constructor() {
     effect(() => {
       if (this.condition()) {
-        this.viewContainer.createEmbeddedView(this.templateRef);
+        this.#viewContainer.createEmbeddedView(this.#templateRef);
       } else {
-        this.viewContainer.clear();
+        this.#viewContainer.clear();
       }
     });
   }
@@ -553,8 +553,8 @@ describe('If', () => {
     imports: [If],
     template: `<p *appIf="show()">Visible</p>`,
   })
-  class TestCmpt {
-    show = signal(false);
+  class Test {
+    protected readonly show = signal(false);
   }
   
   it('should show content when condition is true', () => {
@@ -563,7 +563,7 @@ describe('If', () => {
     
     expect(fixture.nativeElement.querySelector('p')).toBeNull();
     
-    fixture.componentInstance.show.set(true);
+    (fixture.componentInstance as any).show.set(true);
     fixture.detectChanges();
     
     expect(fixture.nativeElement.querySelector('p')).toBeTruthy();
