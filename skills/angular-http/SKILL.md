@@ -24,22 +24,23 @@ interface User {
 @Component({
   selector: 'app-user-profile',
   template: `
-    @if (userResource.isLoading()) {
+    @let resource = userResource;
+    @if (resource.isLoading()) {
       <p>Loading...</p>
-    } @else if (userResource.error()) {
-      <p>Error: {{ userResource.error()?.message }}</p>
-      <button (click)="userResource.reload()">Retry</button>
-    } @else if (userResource.hasValue()) {
-      <h1>{{ userResource.value().name }}</h1>
-      <p>{{ userResource.value().email }}</p>
+    } @else if (resource.error(); as error) {
+      <p>Error: {{ error.message }}</p>
+      <button (click)="resource.reload()">Retry</button>
+    } @else if (resource.value(); as user) {
+      <h1>{{ user.name }}</h1>
+      <p>{{ user.email }}</p>
     }
   `,
 })
 export class UserProfile {
-  userId = signal('123');
+  readonly userId = signal('123');
   
   // Reactive HTTP resource - refetches when userId changes
-  userResource = httpResource<User>(() => `/api/users/${this.userId()}`);
+  protected readonly userResource = httpResource<User>(() => `/api/users/${this.userId()}`);
 }
 ```
 
@@ -47,10 +48,10 @@ export class UserProfile {
 
 ```typescript
 // Simple GET request
-userResource = httpResource<User>(() => `/api/users/${this.userId()}`);
+protected readonly userResource = httpResource<User>(() => `/api/users/${this.userId()}`);
 
 // With full request options
-userResource = httpResource<User>(() => ({
+protected readonly userResource = httpResource<User>(() => ({
   url: `/api/users/${this.userId()}`,
   method: 'GET',
   headers: { 'Authorization': `Bearer ${this.token()}` },
@@ -58,12 +59,12 @@ userResource = httpResource<User>(() => ({
 }));
 
 // With default value
-usersResource = httpResource<User[]>(() => '/api/users', {
+protected readonly usersResource = httpResource<User[]>(() => '/api/users', {
   defaultValue: [],
 });
 
 // Skip request when params undefined
-userResource = httpResource<User>(() => {
+protected readonly userResource = httpResource<User>(() => {
   const id = this.userId();
   return id ? `/api/users/${id}` : undefined;
 });
@@ -94,9 +95,9 @@ import { resource, signal } from '@angular/core';
 
 @Component({...})
 export class Search {
-  query = signal('');
+  readonly query = signal('');
   
-  searchResource = resource({
+  protected readonly searchResource = resource({
     // Reactive params - triggers reload when changed
     params: () => ({ q: this.query() }),
     
@@ -116,7 +117,7 @@ export class Search {
 ### Resource with Default Value
 
 ```typescript
-todosResource = resource({
+protected readonly todosResource = resource({
   defaultValue: [] as Todo[],
   params: () => ({ filter: this.filter() }),
   loader: async ({ params }) => {
@@ -131,11 +132,11 @@ todosResource = resource({
 ### Conditional Loading
 
 ```typescript
-const userId = signal<string | null>(null);
+readonly #userId = signal<string | null>(null);
 
-userResource = resource({
+protected readonly userResource = resource({
   params: () => {
-    const id = userId();
+    const id = this.#userId();
     // Return undefined to skip loading
     return id ? { id } : undefined;
   },
@@ -157,47 +158,47 @@ import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({...})
 export class Users {
-  private http = inject(HttpClient);
+  readonly #http = inject(HttpClient);
   
   // Convert Observable to Signal
-  users = toSignal(
-    this.http.get<User[]>('/api/users'),
+  protected readonly users = toSignal(
+    this.#http.get<User[]>('/api/users'),
     { initialValue: [] }
   );
   
   // Or use Observable directly
-  users$ = this.http.get<User[]>('/api/users');
+  protected readonly users$ = this.#http.get<User[]>('/api/users');
 }
 ```
 
 ### HTTP Methods
 
 ```typescript
-private http = inject(HttpClient);
+readonly #http = inject(HttpClient);
 
 // GET
-getUser(id: string) {
-  return this.http.get<User>(`/api/users/${id}`);
+protected getUser(id: string) {
+  return this.#http.get<User>(`/api/users/${id}`);
 }
 
 // POST
-createUser(user: CreateUserDto) {
-  return this.http.post<User>('/api/users', user);
+protected createUser(user: CreateUserDto) {
+  return this.#http.post<User>('/api/users', user);
 }
 
 // PUT
-updateUser(id: string, user: UpdateUserDto) {
-  return this.http.put<User>(`/api/users/${id}`, user);
+protected updateUser(id: string, user: UpdateUserDto) {
+  return this.#http.put<User>(`/api/users/${id}`, user);
 }
 
 // PATCH
-patchUser(id: string, changes: Partial<User>) {
-  return this.http.patch<User>(`/api/users/${id}`, changes);
+protected patchUser(id: string, changes: Partial<User>) {
+  return this.#http.patch<User>(`/api/users/${id}`, changes);
 }
 
 // DELETE
-deleteUser(id: string) {
-  return this.http.delete<void>(`/api/users/${id}`);
+protected deleteUser(id: string) {
+  return this.#http.delete<void>(`/api/users/${id}`);
 }
 ```
 
@@ -291,7 +292,8 @@ export const appConfig: ApplicationConfig = {
 ```typescript
 @Component({
   template: `
-    @if (userResource.error(); as error) {
+    @let error = userResource.error();
+    @if (error) {
       <div class="error">
         <p>{{ getErrorMessage(error) }}</p>
         <button (click)="userResource.reload()">Retry</button>
@@ -300,9 +302,9 @@ export const appConfig: ApplicationConfig = {
   `,
 })
 export class UserCmpt {
-  userResource = httpResource<User>(() => `/api/users/${this.userId()}`);
+  protected readonly userResource = httpResource<User>(() => `/api/users/${this.userId()}`);
   
-  getErrorMessage(error: unknown): string {
+  protected getErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       return error.error?.message || `Error ${error.status}: ${error.statusText}`;
     }
@@ -316,8 +318,8 @@ export class UserCmpt {
 ```typescript
 import { catchError, retry } from 'rxjs';
 
-getUser(id: string) {
-  return this.http.get<User>(`/api/users/${id}`).pipe(
+protected getUser(id: string) {
+  return this.#http.get<User>(`/api/users/${id}`).pipe(
     retry(2), // Retry up to 2 times
     catchError((error: HttpErrorResponse) => {
       console.error('Error fetching user:', error);
@@ -332,7 +334,8 @@ getUser(id: string) {
 ```typescript
 @Component({
   template: `
-    @switch (dataResource.status()) {
+    @let status = dataResource.status();
+    @switch (status) {
       @case ('idle') {
         <p>Enter a search term</p>
       }
@@ -356,8 +359,8 @@ getUser(id: string) {
   `,
 })
 export class Data {
-  query = signal('');
-  dataResource = httpResource<Data[]>(() => 
+  readonly query = signal('');
+  protected readonly dataResource = httpResource<Data[]>(() =>
     this.query() ? `/api/search?q=${this.query()}` : undefined
   );
 }
