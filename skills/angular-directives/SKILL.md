@@ -18,14 +18,14 @@ import { Directive, input, effect, inject, ElementRef } from '@angular/core';
   selector: '[appHighlight]',
 })
 export class Highlight {
-  private el = inject(ElementRef<HTMLElement>);
+  readonly #el = inject(ElementRef<HTMLElement>);
   
   // Input with alias matching selector
-  color = input('yellow', { alias: 'appHighlight' });
+  readonly color = input('yellow', { alias: 'appHighlight' });
   
   constructor() {
     effect(() => {
-      this.el.nativeElement.style.backgroundColor = this.color();
+      this.#el.nativeElement.style.backgroundColor = this.color();
     });
   }
 }
@@ -48,30 +48,30 @@ Prefer `host` over `@HostBinding`/`@HostListener`:
   },
 })
 export class Tooltip {
-  text = input.required<string>({ alias: 'appTooltip' });
-  position = input<'top' | 'bottom' | 'left' | 'right'>('top');
+  readonly text = input.required<string>({ alias: 'appTooltip' });
+  readonly position = input<'top' | 'bottom' | 'left' | 'right'>('top');
   
-  tooltipId = `tooltip-${crypto.randomUUID()}`;
-  private tooltipEl: HTMLElement | null = null;
-  private el = inject(ElementRef<HTMLElement>);
+  protected readonly tooltipId = `tooltip-${crypto.randomUUID()}`;
+  #tooltipEl: HTMLElement | null = null;
+  readonly #el = inject(ElementRef<HTMLElement>);
   
-  show() {
-    this.tooltipEl = document.createElement('div');
-    this.tooltipEl.id = this.tooltipId;
-    this.tooltipEl.className = `tooltip tooltip-${this.position()}`;
-    this.tooltipEl.textContent = this.text();
-    this.tooltipEl.setAttribute('role', 'tooltip');
-    document.body.appendChild(this.tooltipEl);
-    this.positionTooltip();
+  protected show() {
+    this.#tooltipEl = document.createElement('div');
+    this.#tooltipEl.id = this.tooltipId;
+    this.#tooltipEl.className = `tooltip tooltip-${this.position()}`;
+    this.#tooltipEl.textContent = this.text();
+    this.#tooltipEl.setAttribute('role', 'tooltip');
+    document.body.appendChild(this.#tooltipEl);
+    this.#positionTooltip();
   }
   
-  hide() {
-    this.tooltipEl?.remove();
-    this.tooltipEl = null;
+  protected hide() {
+    this.#tooltipEl?.remove();
+    this.#tooltipEl = null;
   }
   
-  private positionTooltip() {
-    // Position logic based on this.position() and this.el
+  #positionTooltip() {
+    // Position logic based on this.position() and this.#el
   }
 }
 
@@ -94,9 +94,9 @@ export class Tooltip {
   },
 })
 export class Button {
-  variant = input<'primary' | 'secondary'>('primary');
-  size = input<'small' | 'medium' | 'large'>('medium');
-  disabled = input(false, { transform: booleanAttribute });
+  readonly variant = input<'primary' | 'secondary'>('primary');
+  readonly size = input<'small' | 'medium' | 'large'>('medium');
+  readonly disabled = input(false, { transform: booleanAttribute });
 }
 
 // Usage: <button appButton variant="primary" size="large">Click</button>
@@ -112,12 +112,12 @@ export class Button {
   },
 })
 export class ClickOutside {
-  private el = inject(ElementRef<HTMLElement>);
+  readonly #el = inject(ElementRef<HTMLElement>);
   
-  clickOutside = output<void>();
+  readonly clickOutside = output<void>();
   
-  onDocumentClick(event: MouseEvent) {
-    if (!this.el.nativeElement.contains(event.target as Node)) {
+  protected onDocumentClick(event: MouseEvent) {
+    if (!this.#el.nativeElement.contains(event.target as Node)) {
       this.clickOutside.emit();
     }
   }
@@ -136,14 +136,14 @@ export class ClickOutside {
   },
 })
 export class Shortcut {
-  key = input.required<string>({ alias: 'appShortcut' });
-  ctrl = input(false, { transform: booleanAttribute });
-  shift = input(false, { transform: booleanAttribute });
-  alt = input(false, { transform: booleanAttribute });
+  readonly key = input.required<string>({ alias: 'appShortcut' });
+  readonly ctrl = input(false, { transform: booleanAttribute });
+  readonly shift = input(false, { transform: booleanAttribute });
+  readonly alt = input(false, { transform: booleanAttribute });
   
-  triggered = output<KeyboardEvent>();
+  readonly triggered = output<KeyboardEvent>();
   
-  onKeydown(event: KeyboardEvent) {
+  protected onKeydown(event: KeyboardEvent) {
     const keyMatch = event.key.toLowerCase() === this.key().toLowerCase();
     const ctrlMatch = this.ctrl() ? event.ctrlKey || event.metaKey : !event.ctrlKey && !event.metaKey;
     const shiftMatch = this.shift() ? event.shiftKey : !event.shiftKey;
@@ -174,26 +174,26 @@ import { Directive, inject, TemplateRef, ViewContainerRef, OnInit, OnDestroy, in
   selector: '[appPortal]',
 })
 export class Portal implements OnInit, OnDestroy {
-  private templateRef = inject(TemplateRef<any>);
-  private viewContainerRef = inject(ViewContainerRef);
-  private viewRef: EmbeddedViewRef<any> | null = null;
+  readonly #templateRef = inject(TemplateRef<any>);
+  readonly #viewContainerRef = inject(ViewContainerRef);
+  #viewRef: EmbeddedViewRef<any> | null = null;
   
   // Target container selector or element
-  target = input<string | HTMLElement>('body', { alias: 'appPortal' });
+  readonly target = input<string | HTMLElement>('body', { alias: 'appPortal' });
   
   ngOnInit() {
-    const container = this.getContainer();
+    const container = this.#getContainer();
     if (container) {
-      this.viewRef = this.viewContainerRef.createEmbeddedView(this.templateRef);
-      this.viewRef.rootNodes.forEach(node => container.appendChild(node));
+      this.#viewRef = this.#viewContainerRef.createEmbeddedView(this.#templateRef);
+      this.#viewRef.rootNodes.forEach(node => container.appendChild(node));
     }
   }
   
   ngOnDestroy() {
-    this.viewRef?.destroy();
+    this.#viewRef?.destroy();
   }
   
-  private getContainer(): HTMLElement | null {
+  #getContainer(): HTMLElement | null {
     const target = this.target();
     if (typeof target === 'string') {
       return document.querySelector(target);
@@ -217,18 +217,18 @@ Defer rendering until condition is met (one-time):
   selector: '[appLazyRender]',
 })
 export class LazyRender {
-  private templateRef = inject(TemplateRef<any>);
-  private viewContainer = inject(ViewContainerRef);
-  private rendered = false;
+  readonly #templateRef = inject(TemplateRef<any>);
+  readonly #viewContainer = inject(ViewContainerRef);
+  #rendered = false;
   
-  condition = input.required<boolean>({ alias: 'appLazyRender' });
+  readonly condition = input.required<boolean>({ alias: 'appLazyRender' });
   
   constructor() {
     effect(() => {
       // Only render once when condition becomes true
-      if (this.condition() && !this.rendered) {
-        this.viewContainer.createEmbeddedView(this.templateRef);
-        this.rendered = true;
+      if (this.condition() && !this.#rendered) {
+        this.#viewContainer.createEmbeddedView(this.#templateRef);
+        this.#rendered = true;
       }
     });
   }
@@ -253,12 +253,12 @@ interface TemplateContext<T> {
   selector: '[appTemplateOutlet]',
 })
 export class TemplateOutlet<T> {
-  private viewContainer = inject(ViewContainerRef);
-  private currentView: EmbeddedViewRef<TemplateContext<T>> | null = null;
+  readonly #viewContainer = inject(ViewContainerRef);
+  #currentView: EmbeddedViewRef<TemplateContext<T>> | null = null;
   
-  template = input.required<TemplateRef<TemplateContext<T>>>({ alias: 'appTemplateOutlet' });
-  context = input.required<T>({ alias: 'appTemplateOutletContext' });
-  index = input(0, { alias: 'appTemplateOutletIndex' });
+  readonly template = input.required<TemplateRef<TemplateContext<T>>>({ alias: 'appTemplateOutlet' });
+  readonly context = input.required<T>({ alias: 'appTemplateOutletContext' });
+  readonly index = input(0, { alias: 'appTemplateOutletIndex' });
   
   constructor() {
     effect(() => {
@@ -266,13 +266,13 @@ export class TemplateOutlet<T> {
       const context = this.context();
       const index = this.index();
       
-      if (this.currentView) {
-        this.currentView.context.$implicit = context;
-        this.currentView.context.item = context;
-        this.currentView.context.index = index;
-        this.currentView.markForCheck();
+      if (this.#currentView) {
+        this.#currentView.context.$implicit = context;
+        this.#currentView.context.item = context;
+        this.#currentView.context.index = index;
+        this.#currentView.markForCheck();
       } else {
-        this.currentView = this.viewContainer.createEmbeddedView(template, {
+        this.#currentView = this.#viewContainer.createEmbeddedView(template, {
           $implicit: context,
           item: context,
           index,
@@ -307,10 +307,10 @@ Compose directives on components or other directives:
   },
 })
 export class Focusable {
-  isFocused = signal(false);
+  readonly isFocused = signal(false);
   
-  onFocus() { this.isFocused.set(true); }
-  onBlur() { this.isFocused.set(false); }
+  protected onFocus() { this.isFocused.set(true); }
+  protected onBlur() { this.isFocused.set(false); }
 }
 
 @Directive({
@@ -321,7 +321,7 @@ export class Focusable {
   },
 })
 export class Disableable {
-  disabled = input(false, { transform: booleanAttribute });
+  readonly disabled = input(false, { transform: booleanAttribute });
 }
 
 // Component using host directives
@@ -343,12 +343,12 @@ export class Disableable {
   template: `<ng-content />`,
 })
 export class CustomButton {
-  private disableable = inject(Disableable);
+  readonly #disableable = inject(Disableable);
   
-  clicked = output<void>();
+  readonly clicked = output<void>();
   
-  onClick(event: Event) {
-    if (!this.disableable.disabled()) {
+  protected onClick(event: Event) {
+    if (!this.#disableable.disabled()) {
       this.clicked.emit();
     }
   }
@@ -369,16 +369,16 @@ export class CustomButton {
   },
 })
 export class Hoverable {
-  isHovered = signal(false);
+  readonly isHovered = signal(false);
   
-  hoverChange = output<boolean>();
+  readonly hoverChange = output<boolean>();
   
-  onEnter() {
+  protected onEnter() {
     this.isHovered.set(true);
     this.hoverChange.emit(true);
   }
   
-  onLeave() {
+  protected onLeave() {
     this.isHovered.set(false);
     this.hoverChange.emit(false);
   }
@@ -412,7 +412,7 @@ export class Ripple {
 
 @Directive({ selector: '[withElevation]' })
 export class Elevation {
-  elevation = input(2);
+  readonly elevation = input(2);
 }
 
 // Composed component

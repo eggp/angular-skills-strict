@@ -17,16 +17,16 @@
   selector: '[appAutoFocus]',
 })
 export class AutoFocus {
-  private el = inject(ElementRef<HTMLElement>);
+  readonly #el = inject(ElementRef<HTMLElement>);
   
-  enabled = input(true, { alias: 'appAutoFocus', transform: booleanAttribute });
-  delay = input(0);
+  readonly enabled = input(true, { alias: 'appAutoFocus', transform: booleanAttribute });
+  readonly delay = input(0);
   
   constructor() {
     afterNextRender(() => {
       if (this.enabled()) {
         setTimeout(() => {
-          this.el.nativeElement.focus();
+          this.#el.nativeElement.focus();
         }, this.delay());
       }
     });
@@ -48,17 +48,17 @@ export class AutoFocus {
   },
 })
 export class SelectAll {
-  private el = inject(ElementRef<HTMLInputElement>);
+  readonly #el = inject(ElementRef<HTMLInputElement>);
   
-  onFocus() {
+  protected onFocus() {
     // Delay to ensure value is set
-    setTimeout(() => this.el.nativeElement.select(), 0);
+    setTimeout(() => this.#el.nativeElement.select(), 0);
   }
   
-  onClick(event: MouseEvent) {
+  protected onClick(event: MouseEvent) {
     // Select all on first click if not already focused
-    if (document.activeElement !== this.el.nativeElement) {
-      this.el.nativeElement.select();
+    if (document.activeElement !== this.#el.nativeElement) {
+      this.#el.nativeElement.select();
     }
   }
 }
@@ -77,12 +77,12 @@ export class SelectAll {
   },
 })
 export class CopyToClipboard {
-  text = input.required<string>({ alias: 'appCopyToClipboard' });
+  readonly text = input.required<string>({ alias: 'appCopyToClipboard' });
   
-  copied = output<void>();
-  error = output<Error>();
+  readonly copied = output<void>();
+  readonly error = output<Error>();
   
-  async copy() {
+  protected async copy() {
     try {
       await navigator.clipboard.writeText(this.text());
       this.copied.emit();
@@ -110,16 +110,16 @@ export class CopyToClipboard {
   },
 })
 export class Trim {
-  private el = inject(ElementRef<HTMLInputElement | HTMLTextAreaElement>);
-  private ngControl = inject(NgControl, { optional: true, self: true });
+  readonly #el = inject(ElementRef<HTMLInputElement | HTMLTextAreaElement>);
+  readonly #ngControl = inject(NgControl, { optional: true, self: true });
   
-  onBlur() {
-    const value = this.el.nativeElement.value;
+  protected onBlur() {
+    const value = this.#el.nativeElement.value;
     const trimmed = value.trim();
     
     if (value !== trimmed) {
-      this.el.nativeElement.value = trimmed;
-      this.ngControl?.control?.setValue(trimmed);
+      this.#el.nativeElement.value = trimmed;
+      this.#ngControl?.control?.setValue(trimmed);
     }
   }
 }
@@ -138,28 +138,28 @@ export class Trim {
   },
 })
 export class Mask {
-  private el = inject(ElementRef<HTMLInputElement>);
+  readonly #el = inject(ElementRef<HTMLInputElement>);
   
   // Mask pattern: 9 = digit, A = letter, * = any
-  mask = input.required<string>({ alias: 'appMask' });
+  readonly mask = input.required<string>({ alias: 'appMask' });
   
-  onInput(event: InputEvent) {
-    const input = this.el.nativeElement;
+  protected onInput(event: InputEvent) {
+    const input = this.#el.nativeElement;
     const value = input.value;
-    const masked = this.applyMask(value);
+    const masked = this.#applyMask(value);
     
     if (value !== masked) {
       input.value = masked;
     }
   }
   
-  onKeydown(event: KeyboardEvent) {
+  protected onKeydown(event: KeyboardEvent) {
     // Allow navigation keys
     if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(event.key)) {
       return;
     }
     
-    const input = this.el.nativeElement;
+    const input = this.#el.nativeElement;
     const position = input.selectionStart ?? 0;
     const maskChar = this.mask()[position];
     
@@ -168,12 +168,12 @@ export class Mask {
       return;
     }
     
-    if (!this.isValidChar(event.key, maskChar)) {
+    if (!this.#isValidChar(event.key, maskChar)) {
       event.preventDefault();
     }
   }
   
-  private applyMask(value: string): string {
+  #applyMask(value: string): string {
     const mask = this.mask();
     let result = '';
     let valueIndex = 0;
@@ -183,7 +183,7 @@ export class Mask {
       const inputChar = value[valueIndex];
       
       if (maskChar === '9' || maskChar === 'A' || maskChar === '*') {
-        if (this.isValidChar(inputChar, maskChar)) {
+        if (this.#isValidChar(inputChar, maskChar)) {
           result += inputChar;
           valueIndex++;
         } else {
@@ -201,7 +201,7 @@ export class Mask {
     return result;
   }
   
-  private isValidChar(char: string, maskChar: string): boolean {
+  #isValidChar(char: string, maskChar: string): boolean {
     switch (maskChar) {
       case '9': return /\d/.test(char);
       case 'A': return /[a-zA-Z]/.test(char);
@@ -221,23 +221,23 @@ export class Mask {
   selector: '[appCharCount]',
 })
 export class CharCount {
-  private el = inject(ElementRef<HTMLInputElement | HTMLTextAreaElement>);
+  readonly #el = inject(ElementRef<HTMLInputElement | HTMLTextAreaElement>);
   
-  maxLength = input.required<number>({ alias: 'appCharCount' });
+  readonly maxLength = input.required<number>({ alias: 'appCharCount' });
   
-  currentLength = signal(0);
-  remaining = computed(() => this.maxLength() - this.currentLength());
-  isOverLimit = computed(() => this.remaining() < 0);
+  readonly currentLength = signal(0);
+  readonly remaining = computed(() => this.maxLength() - this.currentLength());
+  readonly isOverLimit = computed(() => this.remaining() < 0);
   
   constructor() {
     effect(() => {
-      this.currentLength.set(this.el.nativeElement.value.length);
+      this.currentLength.set(this.#el.nativeElement.value.length);
     });
     
     // Listen for input changes
     afterNextRender(() => {
-      this.el.nativeElement.addEventListener('input', () => {
-        this.currentLength.set(this.el.nativeElement.value.length);
+      this.#el.nativeElement.addEventListener('input', () => {
+        this.currentLength.set(this.#el.nativeElement.value.length);
       });
     });
   }
@@ -257,43 +257,43 @@ export class CharCount {
   selector: '[appLazyLoad]',
 })
 export class LazyLoad implements OnDestroy {
-  private el = inject(ElementRef<HTMLElement>);
-  private observer: IntersectionObserver | null = null;
+  readonly #el = inject(ElementRef<HTMLElement>);
+  #observer: IntersectionObserver | null = null;
   
-  src = input.required<string>({ alias: 'appLazyLoad' });
-  placeholder = input('/assets/placeholder.png');
+  readonly src = input.required<string>({ alias: 'appLazyLoad' });
+  readonly placeholder = input('/assets/placeholder.png');
   
-  loaded = output<void>();
+  readonly loaded = output<void>();
   
   constructor() {
     afterNextRender(() => {
-      this.setupObserver();
+      this.#setupObserver();
     });
   }
   
-  private setupObserver() {
-    this.observer = new IntersectionObserver(
+  #setupObserver() {
+    this.#observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            this.loadImage();
-            this.observer?.disconnect();
+            this.#loadImage();
+            this.#observer?.disconnect();
           }
         });
       },
       { rootMargin: '50px' }
     );
     
-    this.observer.observe(this.el.nativeElement);
+    this.#observer.observe(this.#el.nativeElement);
     
     // Set placeholder
-    if (this.el.nativeElement instanceof HTMLImageElement) {
-      this.el.nativeElement.src = this.placeholder();
+    if (this.#el.nativeElement instanceof HTMLImageElement) {
+      this.#el.nativeElement.src = this.placeholder();
     }
   }
   
-  private loadImage() {
-    const element = this.el.nativeElement;
+  #loadImage() {
+    const element = this.#el.nativeElement;
     
     if (element instanceof HTMLImageElement) {
       element.src = this.src();
@@ -305,7 +305,7 @@ export class LazyLoad implements OnDestroy {
   }
   
   ngOnDestroy() {
-    this.observer?.disconnect();
+    this.#observer?.disconnect();
   }
 }
 
@@ -319,32 +319,32 @@ export class LazyLoad implements OnDestroy {
   selector: '[appInfiniteScroll]',
 })
 export class InfiniteScroll implements OnDestroy {
-  private el = inject(ElementRef<HTMLElement>);
-  private observer: IntersectionObserver | null = null;
+  readonly #el = inject(ElementRef<HTMLElement>);
+  #observer: IntersectionObserver | null = null;
   
-  threshold = input(0.1);
-  disabled = input(false);
+  readonly threshold = input(0.1);
+  readonly disabled = input(false);
   
-  scrolled = output<void>();
+  readonly scrolled = output<void>();
   
   constructor() {
     afterNextRender(() => {
-      this.setupObserver();
+      this.#setupObserver();
     });
     
     effect(() => {
       if (this.disabled()) {
-        this.observer?.disconnect();
+        this.#observer?.disconnect();
       } else {
-        this.setupObserver();
+        this.#setupObserver();
       }
     });
   }
   
-  private setupObserver() {
-    this.observer?.disconnect();
+  #setupObserver() {
+    this.#observer?.disconnect();
     
-    this.observer = new IntersectionObserver(
+    this.#observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !this.disabled()) {
           this.scrolled.emit();
@@ -353,11 +353,11 @@ export class InfiniteScroll implements OnDestroy {
       { threshold: this.threshold() }
     );
     
-    this.observer.observe(this.el.nativeElement);
+    this.#observer.observe(this.#el.nativeElement);
   }
   
   ngOnDestroy() {
-    this.observer?.disconnect();
+    this.#observer?.disconnect();
   }
 }
 
@@ -379,17 +379,17 @@ export class InfiniteScroll implements OnDestroy {
   selector: '[appResize]',
 })
 export class Resize implements OnDestroy {
-  private el = inject(ElementRef<HTMLElement>);
-  private observer: ResizeObserver | null = null;
+  readonly #el = inject(ElementRef<HTMLElement>);
+  #observer: ResizeObserver | null = null;
   
-  width = signal(0);
-  height = signal(0);
+  readonly width = signal(0);
+  readonly height = signal(0);
   
-  resized = output<{ width: number; height: number }>();
+  readonly resized = output<{ width: number; height: number }>();
   
   constructor() {
     afterNextRender(() => {
-      this.observer = new ResizeObserver((entries) => {
+      this.#observer = new ResizeObserver((entries) => {
         const entry = entries[0];
         const { width, height } = entry.contentRect;
         
@@ -398,12 +398,12 @@ export class Resize implements OnDestroy {
         this.resized.emit({ width, height });
       });
       
-      this.observer.observe(this.el.nativeElement);
+      this.#observer.observe(this.#el.nativeElement);
     });
   }
   
   ngOnDestroy() {
-    this.observer?.disconnect();
+    this.#observer?.disconnect();
   }
 }
 
@@ -426,15 +426,15 @@ export class Resize implements OnDestroy {
   },
 })
 export class Draggable {
-  data = input<any>(null, { alias: 'appDraggable' });
-  effectAllowed = input<DataTransfer['effectAllowed']>('move');
+  readonly data = input<any>(null, { alias: 'appDraggable' });
+  readonly effectAllowed = input<DataTransfer['effectAllowed']>('move');
   
-  isDragging = signal(false);
+  readonly isDragging = signal(false);
   
-  dragStart = output<DragEvent>();
-  dragEnd = output<DragEvent>();
+  readonly dragStart = output<DragEvent>();
+  readonly dragEnd = output<DragEvent>();
   
-  onDragStart(event: DragEvent) {
+  protected onDragStart(event: DragEvent) {
     this.isDragging.set(true);
     
     if (event.dataTransfer) {
@@ -445,7 +445,7 @@ export class Draggable {
     this.dragStart.emit(event);
   }
   
-  onDragEnd(event: DragEvent) {
+  protected onDragEnd(event: DragEvent) {
     this.isDragging.set(false);
     this.dragEnd.emit(event);
   }
@@ -461,20 +461,20 @@ export class Draggable {
   },
 })
 export class DropZone {
-  isDragOver = signal(false);
+  readonly isDragOver = signal(false);
   
-  dropped = output<any>();
+  readonly dropped = output<any>();
   
-  onDragOver(event: DragEvent) {
+  protected onDragOver(event: DragEvent) {
     event.preventDefault();
     this.isDragOver.set(true);
   }
   
-  onDragLeave(event: DragEvent) {
+  protected onDragLeave(event: DragEvent) {
     this.isDragOver.set(false);
   }
   
-  onDrop(event: DragEvent) {
+  protected onDrop(event: DragEvent) {
     event.preventDefault();
     this.isDragOver.set(false);
     
@@ -497,32 +497,32 @@ export class DropZone {
   selector: '[appHasPermission]',
 })
 export class HasPermission {
-  private templateRef = inject(TemplateRef<any>);
-  private viewContainer = inject(ViewContainerRef);
-  private authService = inject(Auth);
-  private hasView = false;
+  readonly #templateRef = inject(TemplateRef<any>);
+  readonly #viewContainer = inject(ViewContainerRef);
+  readonly #authService = inject(Auth);
+  #hasView = false;
   
-  permission = input.required<string | string[]>({ alias: 'appHasPermission' });
-  mode = input<'any' | 'all'>('any');
+  readonly permission = input.required<string | string[]>({ alias: 'appHasPermission' });
+  readonly mode = input<'any' | 'all'>('any');
   
   constructor() {
     effect(() => {
-      const hasPermission = this.checkPermission();
+      const hasPermission = this.#checkPermission();
       
-      if (hasPermission && !this.hasView) {
-        this.viewContainer.createEmbeddedView(this.templateRef);
-        this.hasView = true;
-      } else if (!hasPermission && this.hasView) {
-        this.viewContainer.clear();
-        this.hasView = false;
+      if (hasPermission && !this.#hasView) {
+        this.#viewContainer.createEmbeddedView(this.#templateRef);
+        this.#hasView = true;
+      } else if (!hasPermission && this.#hasView) {
+        this.#viewContainer.clear();
+        this.#hasView = false;
       }
     });
   }
   
-  private checkPermission(): boolean {
+  #checkPermission(): boolean {
     const required = this.permission();
     const permissions = Array.isArray(required) ? required : [required];
-    const userPermissions = this.authService.permissions();
+    const userPermissions = this.#authService.permissions();
     
     if (this.mode() === 'all') {
       return permissions.every(p => userPermissions.includes(p));
@@ -545,7 +545,7 @@ export class HasPermission {
   exportAs: 'appToggle',
 })
 export class Toggle {
-  isOpen = signal(false);
+  readonly isOpen = signal(false);
   
   toggle() {
     this.isOpen.update(v => !v);
