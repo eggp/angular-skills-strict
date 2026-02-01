@@ -163,7 +163,7 @@ export class Mask {
     const position = input.selectionStart ?? 0;
     const maskChar = this.mask()[position];
     
-    if (!maskChar) {
+    if (maskChar.length === 0) {
       event.preventDefault();
       return;
     }
@@ -437,7 +437,7 @@ export class Draggable {
   protected onDragStart(event: DragEvent) {
     this.isDragging.set(true);
     
-    if (event.dataTransfer) {
+    if (!isNil(event.dataTransfer)) {
       event.dataTransfer.effectAllowed = this.effectAllowed();
       event.dataTransfer.setData('application/json', JSON.stringify(this.data()));
     }
@@ -479,7 +479,7 @@ export class DropZone {
     this.isDragOver.set(false);
     
     const data = event.dataTransfer?.getData('application/json');
-    if (data) {
+    if (!isNil(data)) {
       this.dropped.emit(JSON.parse(data));
     }
   }

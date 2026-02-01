@@ -48,12 +48,12 @@ Prefer `host` over `@HostBinding`/`@HostListener`:
   },
 })
 export class Tooltip {
+  readonly #el = inject(ElementRef<HTMLElement>);
   readonly text = input.required<string>({ alias: 'appTooltip' });
   readonly position = input<'top' | 'bottom' | 'left' | 'right'>('top');
   
   protected readonly tooltipId = `tooltip-${crypto.randomUUID()}`;
   #tooltipEl: HTMLElement | null = null;
-  readonly #el = inject(ElementRef<HTMLElement>);
   
   protected show() {
     this.#tooltipEl = document.createElement('div');
@@ -183,7 +183,7 @@ export class Portal implements OnInit, OnDestroy {
   
   ngOnInit() {
     const container = this.#getContainer();
-    if (container) {
+    if (!isNil(container)) {
       this.#viewRef = this.#viewContainerRef.createEmbeddedView(this.#templateRef);
       this.#viewRef.rootNodes.forEach(node => container.appendChild(node));
     }

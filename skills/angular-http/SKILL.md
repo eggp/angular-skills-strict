@@ -103,7 +103,7 @@ export class Search {
     
     // Async loader function
     loader: async ({ params, abortSignal }) => {
-      if (!params.q) return [];
+      if (params.q === undefined) { return []; }
       
       const response = await fetch(`/api/search?q=${params.q}`, {
         signal: abortSignal,
@@ -233,7 +233,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(Auth);
   const token = authService.token();
   
-  if (token) {
+  if (token.length > 0) {
     req = req.clone({
       setHeaders: { Authorization: `Bearer ${token}` },
     });

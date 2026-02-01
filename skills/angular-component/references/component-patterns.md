@@ -120,7 +120,7 @@ export class Tabs {
     // Set first tab as active when tabs are available
     effect(() => {
       const firstTab = this.tabs()[0];
-      if (firstTab && !this.activeTab()) {
+      if (!isNil(firstTab) && this.activeTab() !== undefined) {
         this.activeTab.set(firstTab);
       }
     });
@@ -230,8 +230,8 @@ export class Parent {
 @Injectable({ providedIn: 'root' })
 export class Cart {
   readonly #items = signal<CartItem[]>([]);
-  
-  readonly items$ = this.#items.asReadonly();
+  get items(): Signal<CartItem[]> { return this.#items.asReadonly(); }
+    
   readonly total = computed(() => 
     this.#items().reduce((sum, item) => sum + item.price, 0)
   );
@@ -259,7 +259,7 @@ export class Product {
 // Component B
 @Component({ template: `<span>Total: {{ cart.total() }}</span>` })
 export class CartSummary {
-  protected readonly cart = inject(Cart);
+  readonly #cart = inject(Cart);
 }
 ```
 
@@ -348,11 +348,69 @@ export class Page {}
   `,
 })
 export class ErrorBoundary {
-  protected readonly hasError = signal(false);
   readonly #errorHandler = inject(ErrorHandler);
+  protected readonly hasError = signal(false);
   
   protected retry() {
     this.hasError.set(false);
   }
+}
+```
+
+## Local Variables with @let
+
+Use `@let` to declare local variables in the template for better readability and reuse.
+
+```typescript
+@Component({
+  selector: 'app-user-profile',
+  template: `
+    @let user = currentUser();
+
+    <div class="profile">
+      <h1>{{ user.name }}</h1>
+      <p>{{ user.email }}</p>
+
+      @if (user.isAdmin) {
+        <button>Admin Settings</button>
+      }
+    </div>
+  `
+})
+export class UserProfile {
+  protected readonly currentUser = signal({ name: 'John Doe', email: 'john@example.com', isAdmin: true });
+}
+```
+
+## Signal Caching with @let
+
+Avoid multiple signal executions by caching the value in a `@let` block.
+
+```typescript
+@Component({
+  selector: 'app-expensive-calc',
+  template: `
+    <!-- Calculate once and reuse -->
+    @let result = heavyCalculation();
+
+    <div class="stats">
+      <p>Result: {{ result.value }}</p>
+      <p>Formatted: {{ result.formatted }}</p>
+
+      @if (result.isValid) {
+        <span>Calculation valid</span>
+      }
+    </div>
+  `
+})
+export class ExpensiveCalc {
+  readonly #data = signal([1, 2, 3, 4, 5]);
+
+  // A computed signal or a method that returns a signal/value
+  protected readonly heavyCalculation = computed(() => {
+    // Expensive operation
+    const sum = this.#data().reduce((a, b) => a + b, 0);
+    return { value: sum, formatted: `\$${sum}.00`, isValid: sum > 0 };
+  });
 }
 ```

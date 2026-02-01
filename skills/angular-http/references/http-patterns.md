@@ -91,7 +91,7 @@ export class CachedUser {
   }
   
   invalidateCache(id?: string) {
-    if (id) {
+    if (id !== undefined && id.length > 0) {
       this.#cache.delete(id);
     } else {
       this.#cache.clear();
@@ -280,7 +280,7 @@ export class FileUpload {
   
   protected onFileSelected(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
+    if (isNil(file)) { return; }
     
     const formData = new FormData();
     formData.append('file', file);
@@ -361,9 +361,9 @@ export class Search implements OnDestroy {
 ```typescript
 @Component({...})
 export class SearchDebounced {
-  protected readonly query = signal('');
-  
   readonly #http = inject(HttpClient);
+  
+  protected readonly query = signal('');
   
   protected readonly results = toSignal(
     toObservable(this.query).pipe(

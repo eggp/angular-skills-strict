@@ -67,14 +67,14 @@ export const userTitleResolver: ResolveFn<string> = (route) => {
 // auth.service.ts
 @Injectable({ providedIn: 'root' })
 export class Auth {
-  readonly #_user = signal<User | null>(null);
-  readonly #_token = signal<string | null>(null);
-  
-  readonly user = this.#_user.asReadonly();
-  readonly isAuthenticated = computed(() => this.#_user() !== null);
-  
   readonly #router = inject(Router);
   readonly #http = inject(HttpClient);
+    
+  readonly #user = signal<User | null>(null);
+  readonly #token = signal<string | null>(null);
+  
+  readonly isAuthenticated = computed(() => this.#user() !== null);
+  get user(): Signal<User | null> { this.#user.asReadonly(); }
   
   async login(credentials: Credentials): Promise<boolean> {
     try {
@@ -82,8 +82,8 @@ export class Auth {
         this.#http.post<AuthResponse>('/api/login', credentials)
       );
       
-      this.#_token.set(response.token);
-      this.#_user.set(response.user);
+      this.#token.set(response.token);
+      this.#user.set(response.user);
       localStorage.setItem('token', response.token);
       
       return true;
@@ -93,22 +93,22 @@ export class Auth {
   }
   
   logout(): void {
-    this.#_user.set(null);
-    this.#_token.set(null);
+    this.#user.set(null);
+    this.#token.set(null);
     localStorage.removeItem('token');
     this.#router.navigate(['/login']);
   }
   
   async checkAuth(): Promise<boolean> {
     const token = localStorage.getItem('token');
-    if (!token) return false;
+    if (token === null || token.length === 0) { return false; }
     
     try {
       const user = await firstValueFrom(
         this.#http.get<User>('/api/me')
       );
-      this.#_user.set(user);
-      this.#_token.set(token);
+      this.#user.set(user);
+      this.#token.set(token);
       return true;
     } catch {
       localStorage.removeItem('token');
@@ -120,7 +120,6 @@ export class Auth {
 // auth.guard.ts
 export const authGuard: CanActivateFn = async (route, state) => {
   const authService = inject(Auth);
-  const router = inject(Router);
   
   // Check if already authenticated
   if (authService.isAuthenticated()) {
@@ -134,6 +133,7 @@ export const authGuard: CanActivateFn = async (route, state) => {
   }
   
   // Redirect to login
+  const router = inject(Router);
   return router.createUrlTree(['/login'], {
     queryParams: { returnUrl: state.url },
   });
@@ -204,12 +204,12 @@ export class Breadcrumb {
         .map(segment => segment.path)
         .join('/');
       
-      if (routeUrl) {
+      if (routeUrl.length > 0) {
         url += `/${routeUrl}`;
       }
       
       const label = child.snapshot.data['breadcrumb'];
-      if (label) {
+      if (isString(label)) {
         breadcrumbs.push({ label, url });
       }
       
@@ -405,51 +405,7 @@ export class NetworkAwarePreloadStrategy implements PreloadingStrategy {
 
 ## Route Animations
 
-```typescript
-// app.routes.ts
-export const routes: Routes = [
-  { path: 'home', component: Home, data: { animation: 'HomePage' } },
-  { path: 'about', component: About, data: { animation: 'AboutPage' } },
-];
-
-// app.component.ts
-@Component({
-  imports: [RouterOutlet],
-  template: `
-    <div [@routeAnimations]="getRouteAnimationData()">
-      <router-outlet />
-    </div>
-  `,
-  animations: [
-    trigger('routeAnimations', [
-      transition('HomePage <=> AboutPage', [
-        style({ position: 'relative' }),
-        query(':enter, :leave', [
-          style({
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-          }),
-        ]),
-        query(':enter', [style({ left: '-100%' })]),
-        query(':leave', animateChild()),
-        group([
-          query(':leave', [animate('300ms ease-out', style({ left: '100%' }))]),
-          query(':enter', [animate('300ms ease-out', style({ left: '0%' }))]),
-        ]),
-      ]),
-    ]),
-  ],
-})
-export class AppMain {
-  readonly #route = inject(ActivatedRoute);
-
-  protected getRouteAnimationData() {
-    return this.#route.firstChild?.snapshot.data['animation'];
-  }
-}
-```
+Search on internet: Angular v21 new Animations engine(native animations)
 
 ## Scroll Position Restoration
 

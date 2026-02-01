@@ -290,8 +290,8 @@ export class Auth {
   readonly #loading = signal(false);
   
   // Public read-only signals
-  readonly user = this.#user.asReadonly();
-  readonly loading = this.#loading.asReadonly();
+  get user(): Signal<User | null> { return this.#user.asReadonly(); }
+  get loading(): Signal<boolean> { return this.#loading.asReadonly();}
   readonly isAuthenticated = computed(() => this.#user() !== null);
   
   async login(credentials: Credentials): Promise<void> {

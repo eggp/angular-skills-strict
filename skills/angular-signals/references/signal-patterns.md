@@ -124,7 +124,7 @@ export class ProductSt {
   
   readonly filteredProducts = computed(() => {
     const { products, filter } = this.#state();
-    if (!filter) return products;
+    if (!isString(filter)) { return products; }
     return products.filter(p => 
       p.name.toLowerCase().includes(filter.toLowerCase())
     );
@@ -250,9 +250,9 @@ export class Signup {
 ```typescript
 @Component({...})
 export class Search {
-  protected readonly query = signal('');
-  
   readonly #http = inject(HttpClient);
+  
+  protected readonly query = signal('');
   
   // Debounced search using toObservable
   protected readonly results = toSignal(
@@ -267,21 +267,20 @@ export class Search {
   );
   
   // Loading state
-  readonly #searching = signal(false);
-  protected readonly isSearching = this.#searching.asReadonly();
+  protected readonly searching = signal(false);
 
   constructor() {
     // Track loading state
     effect(() => {
       const q = this.query();
       if (q.length >= 2) {
-        this.#searching.set(true);
+        this.searching.set(true);
       }
     });
 
     effect(() => {
       this.results(); // Subscribe to results
-      this.#searching.set(false);
+      this.searching.set(false);
     });
   }
 }

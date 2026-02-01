@@ -45,7 +45,7 @@ export class User {
   readonly #http = inject(HttpClient);
   
   readonly #users = signal<User[]>([]);
-  get users$(): Signal<User[]> { return this.#users.asReadonly(); }
+  get users(): Signal<User[]> { return this.#users.asReadonly(); }
   
   async loadUsers() {
     const users = await firstValueFrom(

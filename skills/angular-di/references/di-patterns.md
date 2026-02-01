@@ -29,7 +29,7 @@ export class ShopFacade {
   // Unified actions
   addToCart(productId: string, quantity: number) {
     const product = this.#productService.getById(productId);
-    if (product) {
+    if (!isNil(product)) {
       this.#cartService.add(product, quantity);
     }
   }
@@ -513,7 +513,7 @@ export function injectQueryParam(param: string): Signal<string | null> {
 // Usage
 @Component({...})
 export class UserCmpt {
-  readonly userId = injectRouteParam('id');
-  readonly tab = injectQueryParam('tab');
+  protected readonly userId = injectRouteParam('id');
+  protected readonly tab = injectQueryParam('tab');
 }
 ```

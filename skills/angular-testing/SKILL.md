@@ -585,7 +585,7 @@ it('should load data', waitForAsync(() => {
       <p>Loading...</p>
     } @else {
       @let user = userResource.value();
-      @if (user) {
+      @if (user !== null) {
         <p>{{ user.name }}</p>
       }
     }

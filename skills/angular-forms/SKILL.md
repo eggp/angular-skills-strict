@@ -443,7 +443,7 @@ When accessing signal values multiple times in a template, use `@let` to cache t
 
 ```typescript
 async onSubmit() {
-  if (!this.form().valid()) return;
+  if (!this.form().valid()) { return; }
   
   await this.api.submit(this.model());
   
