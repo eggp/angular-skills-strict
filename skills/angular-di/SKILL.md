@@ -24,11 +24,11 @@ import { User } from './user.service';
 })
 export class UserList {
   // Inject dependencies
-  private http = inject(HttpClient);
-  private userService = inject(User);
+  readonly #http = inject(HttpClient);
+  readonly #userService = inject(User);
   
   // Can use immediately
-  users = this.userService.getUsers();
+  readonly users = this.#userService.getUsers();
 }
 ```
 
@@ -42,16 +42,16 @@ import { HttpClient } from '@angular/common/http';
   providedIn: 'root', // Singleton at root level
 })
 export class User {
-  private http = inject(HttpClient);
+  readonly #http = inject(HttpClient);
   
-  private users = signal<User[]>([]);
-  readonly users$ = this.users.asReadonly();
+  readonly #users = signal<User[]>([]);
+  get users$(): Signal<User[]> { return this.#users.asReadonly(); }
   
   async loadUsers() {
     const users = await firstValueFrom(
-      this.http.get<User[]>('/api/users')
+      this.#http.get<User[]>('/api/users')
     );
-    this.users.set(users);
+    this.#users.set(users);
   }
 }
 ```
@@ -84,7 +84,7 @@ export const appConfig: ApplicationConfig = {
   template: `...`,
 })
 export class Editor {
-  private editorState = inject(EditorState);
+  readonly #editorState = inject(EditorState);
 }
 ```
 
@@ -159,12 +159,12 @@ export const appConfig: ApplicationConfig = {
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class Api {
-  private apiUrl = inject(API_URL);
-  private config = inject(APP_CONFIG);
-  private window = inject(WINDOW);
+  readonly #apiUrl = inject(API_URL);
+  readonly #config = inject(APP_CONFIG);
+  readonly #window = inject(WINDOW);
   
   getBaseUrl(): string {
-    return this.apiUrl;
+    return this.#apiUrl;
   }
 }
 ```
@@ -237,10 +237,10 @@ providers: [
 @Component({...})
 export class My {
   // Returns null if not provided
-  private analytics = inject(Analytics, { optional: true });
+  readonly #analytics = inject(Analytics, { optional: true });
   
   trackEvent(name: string) {
-    this.analytics?.track(name);
+    this.#analytics?.track(name);
   }
 }
 ```
@@ -253,16 +253,16 @@ export class My {
 })
 export class Parent {
   // Only look in this component's injector
-  private local = inject(Local, { self: true });
+  readonly #local = inject(Local, { self: true });
 }
 
 @Component({...})
 export class Child {
   // Skip this component, look in parent
-  private parentService = inject(ParentSvc, { skipSelf: true });
+  readonly #parentService = inject(ParentSvc, { skipSelf: true });
 
   // Only look up to host component
-  private hostService = inject(Host, { host: true });
+  readonly #hostService = inject(Host, { host: true });
 }
 ```
 
@@ -284,10 +284,10 @@ providers: [
 // Inject as array
 @Injectable()
 export class Validation {
-  private validators = inject(VALIDATORS); // Validator[]
+  readonly #validators = inject(VALIDATORS); // Validator[]
   
   validate(value: string): ValidationError[] {
-    return this.validators
+    return this.#validators
       .map(v => v.validate(value))
       .filter(Boolean);
   }
@@ -353,10 +353,10 @@ import { createEnvironmentInjector, EnvironmentInjector, inject } from '@angular
 
 @Injectable({ providedIn: 'root' })
 export class Plugin {
-  private parentInjector = inject(EnvironmentInjector);
+  readonly #parentInjector = inject(EnvironmentInjector);
   
   loadPlugin(providers: Provider[]): EnvironmentInjector {
-    return createEnvironmentInjector(providers, this.parentInjector);
+    return createEnvironmentInjector(providers, this.#parentInjector);
   }
 }
 ```
@@ -370,10 +370,10 @@ import { runInInjectionContext, EnvironmentInjector, inject } from '@angular/cor
 
 @Injectable({ providedIn: 'root' })
 export class Utility {
-  private injector = inject(EnvironmentInjector);
+  readonly #injector = inject(EnvironmentInjector);
   
   executeWithDI<T>(fn: () => T): T {
-    return runInInjectionContext(this.injector, fn);
+    return runInInjectionContext(this.#injector, fn);
   }
 }
 
